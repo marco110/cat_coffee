@@ -59,8 +59,8 @@ router.post(
       );
       storeId = ins.insertId;
       const uins = await conn.exec(
-        `INSERT INTO store_user (store_id, phone, password, real_name, role, is_owner, is_init_password, status, created_at, updated_at)
-         VALUES (?,?,?,?, 'OWNER', 1, 1, 1, ?, ?)`,
+        `INSERT INTO store_user (store_id, phone, password, real_name, role, is_init_password, status, created_at, updated_at)
+         VALUES (?,?,?,?,'OWNER',1,1,?,?)`,
         [storeId, b.ownerPhone, hash(pwd), b.ownerName || '店主', nowSql(), nowSql()]
       );
       userId = uins.insertId;
@@ -111,7 +111,7 @@ router.get(
     const total = await one(`SELECT COUNT(1) AS c FROM store s WHERE ${wsql}`, params);
     const rows = await query(
       `SELECT s.*, su.real_name AS owner_name, su.phone AS owner_phone
-       FROM store s LEFT JOIN store_user su ON su.store_id = s.id AND su.is_owner = 1 AND su.deleted_at IS NULL
+       FROM store s LEFT JOIN store_user su ON su.store_id = s.id AND su.role = 'OWNER' AND su.deleted_at IS NULL
        WHERE ${wsql} ORDER BY s.id DESC LIMIT ${limit} OFFSET ${offset}`,
       params
     );
@@ -150,7 +150,7 @@ router.get(
   wrap(async (req, res) => {
     const s = await one('SELECT * FROM store WHERE id = ? AND deleted_at IS NULL', [req.params.storeId]);
     if (!s) throw new BizError(CODES.NOT_FOUND, '门店不存在');
-    const owner = await one('SELECT * FROM store_user WHERE store_id = ? AND is_owner = 1 AND deleted_at IS NULL', [s.id]);
+    const owner = await one("SELECT * FROM store_user WHERE store_id = ? AND role = 'OWNER' AND deleted_at IS NULL", [s.id]);
     const stats = await one(
       `SELECT COUNT(1) AS order_count, IFNULL(SUM(pay_amount),0) AS revenue FROM order_main
        WHERE store_id = ? AND deleted_at IS NULL AND status = 'COMPLETED'`,
@@ -254,7 +254,7 @@ router.post(
   adminAuth,
   wrap(async (req, res) => {
     const s = await getStore(req);
-    const owner = await one('SELECT * FROM store_user WHERE store_id = ? AND is_owner = 1 AND deleted_at IS NULL', [s.id]);
+    const owner = await one("SELECT * FROM store_user WHERE store_id = ? AND role = 'OWNER' AND deleted_at IS NULL", [s.id]);
     if (!owner) throw new BizError(CODES.NOT_FOUND, '该门店无店主账号');
     const pwd = randomPassword();
     await exec(

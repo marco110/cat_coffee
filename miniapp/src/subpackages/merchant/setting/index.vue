@@ -58,7 +58,7 @@ import { ref, reactive, onMounted } from 'vue';
 import { storeInfo, updateStoreInfo, updateStoreConfig, updateBusinessStatus, storeUserList, createStoreUser, resetStoreUserPassword } from '@/api/merchant';
 import { useUserStore } from '@/store/user';
 
-const ROLE = { OWNER: '店主', MANAGER: '店长', CLERK: '店员' };
+const ROLE = { OWNER: '店主', STAFF: '店员' };
 const userStore = useUserStore();
 const store = ref({});
 const c = reactive({
@@ -133,12 +133,12 @@ function addUser() {
   uni.showModal({
     title: '添加店员',
     editable: true,
-    placeholderText: '姓名,手机号,角色(MANAGER/CLERK)',
+    placeholderText: '姓名,手机号,角色(OWNER/STAFF)',
     success: async (r) => {
       if (!r.confirm || !r.content) return;
       const [realName, phone, role] = r.content.split(/[,，]/).map((s) => s.trim());
       try {
-        await createStoreUser({ realName, phone, role: role || 'CLERK' });
+        await createStoreUser({ realName, phone, role: role || 'STAFF' });
         uni.showToast({ title: '已添加，初始密码 123456', icon: 'none', duration: 2500 });
         load();
       } catch (err) {

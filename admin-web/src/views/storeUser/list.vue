@@ -68,8 +68,8 @@
         <el-form-item label="姓名"><el-input v-model="form.realName" /></el-form-item>
         <el-form-item label="角色">
           <el-select v-model="form.role" style="width: 100%">
-            <el-option label="店长" value="MANAGER" />
-            <el-option label="店员" value="CLERK" />
+            <el-option label="店主" value="OWNER" />
+            <el-option label="店员" value="STAFF" />
           </el-select>
         </el-form-item>
         <el-form-item label="状态">
@@ -90,7 +90,7 @@ import { ElMessage, ElMessageBox } from 'element-plus';
 import { Search, Plus } from '@element-plus/icons-vue';
 import { getStoreUserList, createStoreUser, updateStoreUser, resetStoreUserPassword, unlockStoreUser, deleteStoreUser, getStoreList } from '@/api';
 
-const ROLE = { OWNER: '店主', MANAGER: '店长', CLERK: '店员' };
+const ROLE = { OWNER: '店主', STAFF: '店员' };
 
 const list = ref([]);
 const stores = ref([]);
@@ -112,7 +112,7 @@ async function load() {
 }
 
 function openCreate() {
-  form.value = { storeId: '', phone: '', realName: '', role: 'CLERK', status: 1 };
+  form.value = { storeId: '', phone: '', realName: '', role: 'STAFF', status: 1 };
   dialogVisible.value = true;
 }
 function openEdit(row) {

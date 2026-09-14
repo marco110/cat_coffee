@@ -31,7 +31,7 @@ import { onShow } from '@dcloudio/uni-app';
 import { useUserStore } from '@/store/user';
 
 const userStore = useUserStore();
-const roleText = computed(() => ({ OWNER: '店主', MANAGER: '店长', CLERK: '店员' }[userStore.merchantInfo?.role] || ''));
+const roleText = computed(() => ({ OWNER: '店主', STAFF: '店员' }[userStore.merchantInfo?.role] || ''));
 
 onShow(() => {
   userStore.restore();

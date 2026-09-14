@@ -14,7 +14,7 @@ router.get(
   '/config',
   adminAuth,
   wrap(async (req, res) => {
-    const rows = await query('SELECT * FROM platform_config');
+    const rows = await query('SELECT * FROM sys_config');
     const out = {};
     rows.forEach((r) => {
       out[r.config_key] = r.config_value;
@@ -31,14 +31,14 @@ router.put(
     const body = req.body || {};
     for (const [k, v] of Object.entries(body)) {
       if (v === undefined || v === null) continue;
-      const exist = await one('SELECT id FROM platform_config WHERE config_key = ?', [k]);
+      const exist = await one('SELECT id FROM sys_config WHERE config_key = ?', [k]);
       const value = typeof v === 'object' ? JSON.stringify(v) : String(v);
       if (exist) {
-        await exec('UPDATE platform_config SET config_value = ?, updated_at = ? WHERE id = ?', [value, nowSql(), exist.id]);
+        await exec('UPDATE sys_config SET config_value = ?, updated_at = ? WHERE id = ?', [value, nowSql(), exist.id]);
       } else {
         await exec(
-          'INSERT INTO platform_config (config_key, config_value, remark, created_at, updated_at) VALUES (?,?,?,?,?)',
-          [k, value, '', nowSql(), nowSql()]
+          'INSERT INTO sys_config (config_key, config_value, config_group, description, created_at, updated_at) VALUES (?,?,?,?,?,?)',
+          [k, value, 'PLATFORM', '', nowSql(), nowSql()]
         );
       }
     }
@@ -52,14 +52,15 @@ router.get(
   '/config/list',
   adminAuth,
   wrap(async (req, res) => {
-    const rows = await query('SELECT * FROM platform_config ORDER BY id');
+    const rows = await query('SELECT * FROM sys_config ORDER BY id');
     return ok(
       res,
       rows.map((r) => ({
         id: sid(r.id),
         configKey: r.config_key,
         configValue: r.config_value,
-        remark: r.remark || '',
+        configGroup: r.config_group || '',
+        remark: r.description || '',
         updatedAt: r.updated_at,
       }))
     );

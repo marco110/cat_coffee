@@ -164,7 +164,7 @@ router.get(
         phone: maskPhone(u.phone),
         realName: u.real_name || '',
         role: u.role,
-        isOwner: Number(u.is_owner),
+        isOwner: u.role === 'OWNER' ? 1 : 0,
         avatar: u.avatar || '',
         status: Number(u.status),
         isInitPassword: Number(u.is_init_password),
@@ -185,9 +185,9 @@ router.post(
     if (exist) throw new BizError(CODES.CONFLICT, '该手机号已注册');
     const pwd = randomPassword();
     const ins = await exec(
-      `INSERT INTO store_user (store_id, phone, password, real_name, role, is_owner, is_init_password, status, created_at, updated_at)
-       VALUES (?,?,?,?,?,0,1,1,?,?)`,
-      [req.storeId, phone, hash(pwd), realName || '', role === 'MANAGER' ? 'MANAGER' : 'CLERK', nowSql(), nowSql()]
+      `INSERT INTO store_user (store_id, phone, password, real_name, role, is_init_password, status, created_at, updated_at)
+       VALUES (?,?,?,?,'STAFF',1,1,?,?)`,
+      [req.storeId, phone, hash(pwd), realName || '', nowSql(), nowSql()]
     );
     await logOp(req, `新增店员账号：${phone}`, ins.insertId);
     return ok(res, { id: sid(ins.insertId), initPassword: pwd }, '新增成功');
@@ -232,7 +232,7 @@ router.delete(
   merchantAuth,
   wrap(async (req, res) => {
     const u = await getStoreUser(req);
-    if (Number(u.is_owner) === 1) throw new BizError(CODES.CONFLICT, '店主账号不可删除');
+    if (u.role === 'OWNER') throw new BizError(CODES.CONFLICT, '店主账号不可删除');
     await exec('UPDATE store_user SET deleted_at = ?, status = 0, updated_at = ? WHERE id = ?', [nowSql(), nowSql(), u.id]);
     return ok(res, { ok: true }, '删除成功');
   })

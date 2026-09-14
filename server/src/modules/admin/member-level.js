@@ -16,7 +16,7 @@ router.get(
   '/member-level/template',
   adminAuth,
   wrap(async (req, res) => {
-    const row = await one('SELECT * FROM platform_config WHERE config_key = ?', [KEY]);
+    const row = await one('SELECT * FROM sys_config WHERE config_key = ?', [KEY]);
     const list = row ? JSON.parse(row.config_value) : DEFAULT_LEVELS;
     return ok(
       res,
@@ -56,13 +56,14 @@ router.put(
         discount: Number(l.discount),
       }))
     );
-    const exist = await one('SELECT id FROM platform_config WHERE config_key = ?', [KEY]);
+    const exist = await one('SELECT id FROM sys_config WHERE config_key = ?', [KEY]);
     if (exist) {
-      await exec('UPDATE platform_config SET config_value = ?, updated_at = ? WHERE id = ?', [value, nowSql(), exist.id]);
+      await exec('UPDATE sys_config SET config_value = ?, updated_at = ? WHERE id = ?', [value, nowSql(), exist.id]);
     } else {
-      await exec('INSERT INTO platform_config (config_key, config_value, remark, created_at, updated_at) VALUES (?,?,?,?,?)', [
+      await exec('INSERT INTO sys_config (config_key, config_value, config_group, description, created_at, updated_at) VALUES (?,?,?,?,?,?)', [
         KEY,
         value,
+        'POINTS',
         '新店默认会员等级模板',
         nowSql(),
         nowSql(),
