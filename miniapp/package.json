@@ -1,0 +1,26 @@
+{
+  "name": "cat-coffee-miniapp",
+  "version": "1.0.0",
+  "private": true,
+  "description": "爱猫咖啡 · 扫码点餐小程序（uni-app + Vue3）",
+  "scripts": {
+    "dev:mp-weixin": "uni build -p mp-weixin --watch",
+    "build:mp-weixin": "uni build -p mp-weixin",
+    "dev:h5": "uni",
+    "build:h5": "uni build"
+  },
+  "dependencies": {
+    "@dcloudio/uni-app": "3.0.0-alpha-5020620260914001",
+    "@dcloudio/uni-components": "3.0.0-alpha-5020620260914001",
+    "@dcloudio/uni-h5": "3.0.0-alpha-5020620260914001",
+    "@dcloudio/uni-mp-weixin": "3.0.0-alpha-5020620260914001",
+    "pinia": "^2.1.7",
+    "vue": "^3.4.21"
+  },
+  "devDependencies": {
+    "@dcloudio/uni-cli-shared": "3.0.0-alpha-5020620260914001",
+    "@dcloudio/vite-plugin-uni": "3.0.0-alpha-5020620260914001",
+    "sass": "^1.71.1",
+    "vite": "^5.1.4"
+  }
+}

@@ -1,0 +1,106 @@
+:root {
+  --cc-brown: #6f4e37;
+  --cc-brown-light: #8a6a51;
+  --cc-cream: #f5efe6;
+  --cc-orange: #e8a87c;
+  --cc-text: #3d2c1e;
+  --cc-text-secondary: #9c8b7a;
+  --cc-border: #ede4d9;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#app {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: 'PingFang SC', 'Microsoft YaHei', 'Helvetica Neue', Arial, sans-serif;
+  background: #f5efe6;
+  color: var(--cc-text);
+}
+
+.cc-page {
+  padding: 16px;
+}
+
+.cc-card {
+  background: #fff;
+  border-radius: 12px;
+  padding: 20px;
+}
+
+.cc-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.cc-toolbar .el-form-item {
+  margin-bottom: 0;
+}
+
+.cc-table-card {
+  background: #fff;
+  border-radius: 12px;
+  padding: 16px;
+}
+
+.cc-pagination {
+  margin-top: 16px;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.cc-stat-card {
+  background: #fff;
+  border-radius: 12px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+}
+
+.cc-stat-card .label {
+  color: var(--cc-text-secondary);
+  font-size: 13px;
+}
+
+.cc-stat-card .value {
+  margin-top: 8px;
+  font-size: 26px;
+  font-weight: 700;
+  color: var(--cc-brown);
+}
+
+.cc-stat-card .sub {
+  margin-top: 6px;
+  font-size: 12px;
+  color: var(--cc-text-secondary);
+}
+
+/* Element Plus 主题色适配咖啡棕 */
+.el-button--primary {
+  --el-button-bg-color: #6f4e37;
+  --el-button-border-color: #6f4e37;
+  --el-button-hover-bg-color: #8a6a51;
+  --el-button-hover-border-color: #8a6a51;
+  --el-button-active-bg-color: #5c4130;
+  --el-button-active-border-color: #5c4130;
+}
+
+.el-menu {
+  border-right: none;
+}
+
+.cc-sidebar .el-menu-item.is-active {
+  background: rgba(232, 168, 124, 0.16) !important;
+  color: #fff !important;
+}

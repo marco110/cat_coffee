@@ -1,0 +1,25 @@
+{
+  "name": "cat-coffee-admin-web",
+  "version": "1.0.0",
+  "private": true,
+  "description": "爱猫咖啡 · 平台超管后台（Vue3 + Vite + Element Plus）",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "axios": "^1.6.8",
+    "echarts": "^5.5.0",
+    "element-plus": "^2.6.1",
+    "@element-plus/icons-vue": "^2.3.1",
+    "pinia": "^2.1.7",
+    "vue": "^3.4.21",
+    "vue-router": "^4.3.0"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "^5.0.4",
+    "sass": "^1.71.1",
+    "vite": "^5.2.0"
+  }
+}
