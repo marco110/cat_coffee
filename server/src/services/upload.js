@@ -27,15 +27,44 @@ const upload = multer({
   },
 });
 
-/** multer 单文件中间件，异常转为业务异常 */
+/**
+ * 修正上传文件名编码。
+ * multer/busboy 按 latin1 解析 multipart 头部，浏览器传来的 UTF-8 中文文件名会被
+ * 逐字节截断成乱码（如 "猫" → "ç"+"«"），这里尝试还原为 UTF-8。
+ * 只有当还原结果不含替换字符 U+FFFD 时才认为原串确实是 mojibake。
+ */
+function decodeOriginalName(name) {
+  if (!name) return '';
+  if (!/[^\x00-\x7F]/.test(name)) return name; // 纯 ASCII 无需处理
+  try {
+    const decoded = Buffer.from(name, 'latin1').toString('utf8');
+    if (decoded && !decoded.includes('\uFFFD')) return decoded;
+  } catch (e) {
+    /* ignore */
+  }
+  return name;
+}
+
+function fixFileNames(file) {
+  if (file && typeof file.originalname === 'string') {
+    file.originalname = decodeOriginalName(file.originalname);
+  }
+}
+
+/** multer 单文件中间件，异常转为业务异常 + 文件名编码修正 */
 function single(field = 'file') {
   return (req, res, next) =>
     upload.single(field)(req, res, (err) => {
       if (err) {
         err.code = 400;
         err.name = 'BizError';
+        return next(err);
       }
-      next(err);
+      fixFileNames(req.file);
+      if (Array.isArray(req.files)) {
+        (Array.isArray(req.files[0]) ? req.files.flat() : req.files).forEach(fixFileNames);
+      }
+      return next();
     });
 }
 
@@ -49,7 +78,7 @@ async function saveUploadRecord(db, { file, storeId = 0, bizType = 'OTHER', uplo
       storeId,
       url,
       file.path,
-      (file.originalname || '').slice(0, 200),
+      decodeOriginalName(file.originalname).slice(0, 200),
       file.mimetype,
       file.size,
       bizType,
@@ -60,4 +89,4 @@ async function saveUploadRecord(db, { file, storeId = 0, bizType = 'OTHER', uplo
   return url;
 }
 
-module.exports = { upload, single, saveUploadRecord };
+module.exports = { upload, single, saveUploadRecord, decodeOriginalName };

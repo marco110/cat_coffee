@@ -211,7 +211,7 @@ onMounted(() => {
   width: 40px;
   height: 40px;
   border-radius: 8px;
-  background: #6f4e37;
+  background: linear-gradient(135deg, #ffa9c8, #ff6fa5);
   color: #fff;
   display: flex;
   align-items: center;
@@ -228,15 +228,15 @@ onMounted(() => {
 }
 .addr {
   font-size: 12px;
-  color: #9c8b7a;
+  color: var(--cc-text-secondary);
 }
 .muted {
   font-size: 12px;
-  color: #9c8b7a;
+  color: var(--cc-text-secondary);
 }
 .warn {
   margin-top: 12px;
   font-size: 12px;
-  color: #e6a23c;
+  color: #d48806;
 }
 </style>

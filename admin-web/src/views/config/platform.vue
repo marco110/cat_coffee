@@ -102,11 +102,11 @@ h3 {
 .desc {
   margin: 6px 0 0;
   font-size: 13px;
-  color: #9c8b7a;
+  color: var(--cc-text-secondary);
 }
 .unit {
   margin-left: 12px;
   font-size: 12px;
-  color: #9c8b7a;
+  color: var(--cc-text-secondary);
 }
 </style>

@@ -95,11 +95,11 @@ h3 {
 .desc {
   margin: 6px 0 0;
   font-size: 13px;
-  color: #9c8b7a;
+  color: var(--cc-text-secondary);
 }
 .tip {
   margin-top: 16px;
   font-size: 12px;
-  color: #e6a23c;
+  color: #d48806;
 }
 </style>

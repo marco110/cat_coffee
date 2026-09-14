@@ -7,7 +7,8 @@
   "scripts": {
     "start": "node src/app.js",
     "dev": "node --watch src/app.js",
-    "init-db": "node scripts/init-db.js"
+    "init-db": "node scripts/init-db.js",
+    "fix-upload-names": "node scripts/fix-upload-names.js"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",

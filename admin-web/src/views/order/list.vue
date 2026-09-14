@@ -166,7 +166,7 @@ onMounted(async () => {
   display: flex;
   align-items: center;
   padding: 10px 0;
-  border-bottom: 1px dashed #ede4d9;
+  border-bottom: 1px dashed var(--cc-border);
 }
 .g-info {
   flex: 1;
@@ -179,17 +179,17 @@ onMounted(async () => {
 .g-spec,
 .g-remark {
   font-size: 12px;
-  color: #9c8b7a;
+  color: var(--cc-text-secondary);
 }
 .g-qty {
   width: 60px;
   text-align: right;
-  color: #9c8b7a;
+  color: var(--cc-text-secondary);
 }
 .g-price {
   width: 100px;
   text-align: right;
-  color: #6f4e37;
+  color: var(--cc-pink-dark);
   font-weight: 600;
 }
 .price-row {
@@ -197,21 +197,21 @@ onMounted(async () => {
   justify-content: space-between;
   padding: 6px 0;
   font-size: 13px;
-  color: #9c8b7a;
+  color: var(--cc-text-secondary);
 }
 .price-row.red {
-  color: #e8a87c;
+  color: var(--cc-red);
 }
 .price-row.total {
-  border-top: 1px solid #ede4d9;
+  border-top: 1px solid var(--cc-border);
   margin-top: 8px;
   padding-top: 12px;
-  color: #3d2c1e;
+  color: var(--cc-text);
   font-size: 15px;
   font-weight: 600;
 }
 .price-row.total span:last-child {
-  color: #6f4e37;
+  color: var(--cc-pink-dark);
   font-size: 20px;
 }
 </style>

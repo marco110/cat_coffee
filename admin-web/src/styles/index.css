@@ -1,11 +1,58 @@
+/* ==========================================================================
+   爱猫咖啡 · 超管后台 —— Hello Kitty 风格主题（粉色系 / 圆润 / 蝴蝶结）
+   说明：本主题为「Hello Kitty 风格」的自绘 CSS/SVG 视觉方案，
+        未内置任何官方素材或商标图形，内部自用请注意 IP 授权。
+   ========================================================================== */
+
 :root {
-  --cc-brown: #6f4e37;
-  --cc-brown-light: #8a6a51;
-  --cc-cream: #f5efe6;
-  --cc-orange: #e8a87c;
-  --cc-text: #3d2c1e;
-  --cc-text-secondary: #9c8b7a;
-  --cc-border: #ede4d9;
+  /* 主色：草莓粉 */
+  --cc-pink: #ff6fa5;
+  --cc-pink-dark: #f0487e;
+  --cc-pink-light: #ffa9c8;
+  --cc-pink-soft: #ffe3ee;
+  --cc-red: #ef3d6b;
+  --cc-yellow: #ffd84d;
+  --cc-mint: #6fd3c7;
+  --cc-lilac: #b79bdd;
+  --cc-cream: #fff6f9;
+  --cc-text: #5b3b4a;
+  --cc-text-secondary: #a8889c;
+  --cc-border: #f7d9e6;
+
+  /* 兼容旧变量（原咖啡棕，现统一映射到粉色系） */
+  --cc-brown: var(--cc-pink-dark);
+  --cc-brown-light: var(--cc-pink);
+  --cc-orange: var(--cc-yellow);
+
+  /* Element Plus 主题变量 */
+  --el-color-primary: #ff6fa5;
+  --el-color-primary-light-3: #ff9bc2;
+  --el-color-primary-light-5: #ffbcd6;
+  --el-color-primary-light-7: #ffdce8;
+  --el-color-primary-light-8: #ffeaf2;
+  --el-color-primary-light-9: #fff5f8;
+  --el-color-primary-dark-2: #f0487e;
+  --el-color-success: #4fc3a1;
+  --el-color-warning: #ffc53d;
+  --el-color-danger: #f2637b;
+  --el-color-error: #f2637b;
+  --el-color-info: #b79bdd;
+  --el-text-color-primary: #5b3b4a;
+  --el-text-color-regular: #7a5a6a;
+  --el-border-color: #f7d9e6;
+  --el-border-color-light: #fce7f0;
+  --el-border-color-lighter: #fdf0f5;
+  --el-border-radius-base: 14px;
+  --el-border-radius-small: 10px;
+  --el-border-radius-round: 999px;
+  --el-fill-color-blank: #ffffff;
+  --el-box-shadow: 0 8px 24px rgba(240, 72, 128, 0.12);
+  --el-box-shadow-light: 0 6px 18px rgba(240, 72, 128, 0.1);
+  --el-box-shadow-lighter: 0 2px 8px rgba(240, 72, 128, 0.06);
+  --el-table-header-bg-color: #fff3f7;
+  --el-table-header-text-color: #5b3b4a;
+  --el-table-row-hover-bg-color: #fff5f8;
+  --el-table-border-color: #fdeaf2;
 }
 
 * {
@@ -21,19 +68,39 @@ body,
 }
 
 body {
-  font-family: 'PingFang SC', 'Microsoft YaHei', 'Helvetica Neue', Arial, sans-serif;
-  background: #f5efe6;
+  font-family: 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'Helvetica Neue', Arial, sans-serif;
   color: var(--cc-text);
+  background: var(--cc-cream);
+  /* 圆点 + 斜纹的可爱底纹 */
+  background-image: radial-gradient(rgba(255, 111, 165, 0.13) 2px, transparent 2px),
+    radial-gradient(rgba(255, 216, 77, 0.12) 2px, transparent 2px);
+  background-size: 26px 26px, 26px 26px;
+  background-position: 0 0, 13px 13px;
+  background-attachment: fixed;
 }
 
+/* ---------- 页面骨架 ---------- */
 .cc-page {
-  padding: 16px;
+  padding: 18px;
 }
 
 .cc-card {
+  position: relative;
   background: #fff;
-  border-radius: 12px;
+  border: 1px solid var(--cc-border);
+  border-radius: 18px;
   padding: 20px;
+  box-shadow: 0 6px 18px rgba(240, 72, 128, 0.08);
+  overflow: hidden;
+}
+
+/* 顶部糖果色丝带 */
+.cc-card::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 4px;
+  background: linear-gradient(90deg, var(--cc-pink) 0%, var(--cc-yellow) 45%, var(--cc-mint) 75%, var(--cc-lilac) 100%);
 }
 
 .cc-toolbar {
@@ -50,8 +117,10 @@ body {
 
 .cc-table-card {
   background: #fff;
-  border-radius: 12px;
+  border: 1px solid var(--cc-border);
+  border-radius: 18px;
   padding: 16px;
+  box-shadow: 0 6px 18px rgba(240, 72, 128, 0.08);
 }
 
 .cc-pagination {
@@ -60,12 +129,35 @@ body {
   justify-content: flex-end;
 }
 
+/* ---------- 数据卡片 ---------- */
 .cc-stat-card {
-  background: #fff;
-  border-radius: 12px;
+  position: relative;
+  background: linear-gradient(160deg, var(--card-a, #ffe9f2) 0%, #ffffff 62%);
+  border: 1px solid var(--cc-border);
+  border-radius: 18px;
   padding: 20px;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 6px 18px rgba(240, 72, 128, 0.08);
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+
+.cc-stat-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 12px 26px rgba(240, 72, 128, 0.16);
+}
+
+/* 右下角爪印水印 */
+.cc-stat-card::after {
+  content: '🐾';
+  position: absolute;
+  right: 12px;
+  bottom: 6px;
+  font-size: 54px;
+  line-height: 1;
+  opacity: 0.13;
+  transform: rotate(-12deg);
 }
 
 .cc-stat-card .label {
@@ -76,8 +168,8 @@ body {
 .cc-stat-card .value {
   margin-top: 8px;
   font-size: 26px;
-  font-weight: 700;
-  color: var(--cc-brown);
+  font-weight: 800;
+  color: var(--card-c, var(--cc-pink-dark));
 }
 
 .cc-stat-card .sub {
@@ -86,21 +178,243 @@ body {
   color: var(--cc-text-secondary);
 }
 
-/* Element Plus 主题色适配咖啡棕 */
-.el-button--primary {
-  --el-button-bg-color: #6f4e37;
-  --el-button-border-color: #6f4e37;
-  --el-button-hover-bg-color: #8a6a51;
-  --el-button-hover-border-color: #8a6a51;
-  --el-button-active-bg-color: #5c4130;
-  --el-button-active-border-color: #5c4130;
+/* ---------- 标题 ---------- */
+.cc-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--cc-text);
+}
+
+.cc-title::before {
+  content: '';
+  width: 8px;
+  height: 18px;
+  border-radius: 999px;
+  background: linear-gradient(180deg, var(--cc-pink) 0%, var(--cc-pink-light) 100%);
+}
+
+/* ---------- 蝴蝶结装饰 ---------- */
+.cc-bow {
+  position: relative;
+  display: inline-block;
+  width: 26px;
+  height: 14px;
+}
+
+.cc-bow::before,
+.cc-bow::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  width: 12px;
+  height: 14px;
+  border-radius: 4px 8px 8px 4px;
+  background: var(--cc-red);
+}
+
+.cc-bow::before {
+  left: 0;
+  transform: rotate(-12deg);
+}
+
+.cc-bow::after {
+  right: 0;
+  border-radius: 8px 4px 4px 8px;
+  transform: rotate(12deg);
+}
+
+.cc-bow i {
+  position: absolute;
+  left: 50%;
+  top: 3px;
+  width: 8px;
+  height: 8px;
+  margin-left: -4px;
+  border-radius: 50%;
+  background: #ff86a8;
+  z-index: 1;
+}
+
+/* ==========================================================================
+   Element Plus 细节适配
+   ========================================================================== */
+.el-button {
+  font-weight: 600;
+}
+
+.el-button--primary,
+.el-button--primary:focus {
+  --el-button-bg-color: var(--cc-pink);
+  --el-button-border-color: var(--cc-pink);
+  --el-button-hover-bg-color: #ff8db8;
+  --el-button-hover-border-color: #ff8db8;
+  --el-button-active-bg-color: var(--cc-pink-dark);
+  --el-button-active-border-color: var(--cc-pink-dark);
+  box-shadow: 0 4px 12px rgba(255, 111, 165, 0.32);
+}
+
+.el-button--primary.is-link,
+.el-button--primary.is-text {
+  box-shadow: none;
+}
+
+.el-button.is-round,
+.el-tag,
+.el-input__wrapper,
+.el-select__wrapper,
+.el-textarea__inner {
+  border-radius: 999px;
+}
+
+.el-textarea__inner {
+  border-radius: 14px;
+}
+
+.el-card {
+  border-radius: 18px;
+  border-color: var(--cc-border);
+}
+
+.el-dialog {
+  border-radius: 22px;
+  overflow: hidden;
+}
+
+.el-dialog__header {
+  margin-right: 0;
+  padding: 16px 20px;
+  background: linear-gradient(90deg, #fff1f6 0%, #ffffff 100%);
+  border-bottom: 1px dashed var(--cc-border);
+}
+
+.el-dialog__title {
+  font-weight: 700;
+  color: var(--cc-pink-dark);
+}
+
+.el-message {
+  border-radius: 999px !important;
+  border-color: var(--cc-border);
+  box-shadow: 0 8px 20px rgba(240, 72, 128, 0.16);
+}
+
+.el-message-box {
+  border-radius: 20px;
+  padding-bottom: 12px;
+}
+
+.el-tag {
+  padding: 0 12px;
+  font-weight: 600;
+  border: none;
+}
+
+.el-table {
+  --el-table-border-color: #fdeaf2;
+  font-size: 13px;
+  border-radius: 14px;
+  overflow: hidden;
+}
+
+.el-table th.el-table__cell {
+  font-weight: 700;
+}
+
+.el-table .el-table__row:hover > td.el-table__cell {
+  background: #fff5f8 !important;
+}
+
+.el-form-item__label {
+  font-weight: 600;
+  color: #7a5a6a;
+}
+
+.el-tabs__item.is-active {
+  color: var(--cc-pink-dark);
+  font-weight: 700;
+}
+
+.el-tabs__active-bar {
+  height: 3px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--cc-pink), var(--cc-pink-light));
+}
+
+.el-pagination.is-background .btn-next,
+.el-pagination.is-background .btn-prev,
+.el-pagination.is-background .el-pager li {
+  border-radius: 10px;
+}
+
+.el-pagination.is-background .el-pager li.is-active {
+  background: var(--cc-pink);
 }
 
 .el-menu {
   border-right: none;
 }
 
-.cc-sidebar .el-menu-item.is-active {
-  background: rgba(232, 168, 124, 0.16) !important;
+/* 侧边菜单（粉色渐变底 + 白色胶囊选中态） */
+.cc-sidebar .el-menu {
+  background: transparent;
+  padding: 8px 10px;
+  gap: 6px;
+}
+
+.cc-sidebar .el-menu-item {
+  height: 46px;
+  line-height: 46px;
+  border-radius: 999px;
+  margin-bottom: 4px;
+  color: rgba(255, 255, 255, 0.9) !important;
+  font-weight: 600;
+}
+
+.cc-sidebar .el-menu-item .el-icon {
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.cc-sidebar .el-menu-item:hover {
+  background: rgba(255, 255, 255, 0.18) !important;
   color: #fff !important;
+}
+
+.cc-sidebar .el-menu-item.is-active {
+  background: #fff !important;
+  color: var(--cc-pink-dark) !important;
+  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.12);
+}
+
+.cc-sidebar .el-menu-item.is-active .el-icon {
+  color: var(--cc-pink);
+}
+
+.cc-sidebar .el-menu--collapse .el-menu-item {
+  padding: 0 !important;
+  justify-content: center;
+}
+
+/* ---------- 滚动条 ---------- */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #ffc8dd;
+  border-radius: 999px;
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--cc-pink-light);
+  background-clip: content-box;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
 }

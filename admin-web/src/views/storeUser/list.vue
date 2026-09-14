@@ -165,7 +165,7 @@ onMounted(async () => {
 
 <style scoped>
 .muted {
-  color: #9c8b7a;
+  color: var(--cc-text-secondary);
   font-size: 12px;
 }
 </style>
