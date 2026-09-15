@@ -1,11 +1,13 @@
 <template>
   <view class="ct-empty">
-    <view class="icon">🐾</view>
+    <ct-kitty mode="face" :size="140" opacity="0.55" />
     <text class="text">{{ text }}</text>
   </view>
 </template>
 
 <script setup>
+import CtKitty from '@/components/ct-kitty.vue';
+
 defineProps({ text: { type: String, default: '这里什么都没有~' } });
 </script>
 
@@ -15,10 +17,6 @@ defineProps({ text: { type: String, default: '这里什么都没有~' } });
   display: flex;
   flex-direction: column;
   align-items: center;
-  .icon {
-    font-size: 80rpx;
-    opacity: 0.35;
-  }
   .text {
     margin-top: 16rpx;
     color: $text-secondary;

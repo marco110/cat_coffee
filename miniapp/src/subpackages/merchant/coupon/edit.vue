@@ -64,7 +64,7 @@
       </view>
       <view class="row">
         <text class="label">开放领取</text>
-        <switch :checked="form.isPublic" color="#6F4E37" @change="(e) => (form.isPublic = e.detail.value)" />
+        <switch :checked="form.isPublic" color="#FF6FA5" @change="(e) => (form.isPublic = e.detail.value)" />
       </view>
       <view class="row">
         <text class="label">使用说明</text>

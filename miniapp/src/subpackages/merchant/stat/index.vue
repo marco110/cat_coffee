@@ -56,6 +56,7 @@
 import { ref, computed, onMounted } from 'vue';
 import { statOverview, statTrend, statTopDishes, statPeakHours, statMember } from '@/api/merchant';
 import { price } from '@/utils/format';
+import CtEmpty from '@/components/ct-empty.vue';
 
 const RANGES = [
   { label: '今日', value: 'TODAY' },
@@ -169,7 +170,7 @@ onMounted(() => load());
 }
 .bar {
   width: 24rpx;
-  background: linear-gradient(180deg, #e8a87c, #6f4e37);
+  background: $grad-brand;
   border-radius: 6rpx 6rpx 0 0;
   margin: 8rpx 0;
 }

@@ -16,8 +16,8 @@
         <view class="price-line">
           <text class="price">¥{{ price(dish.price) }}</text>
           <text v-if="dish.originalPrice" class="origin">¥{{ price(dish.originalPrice) }}</text>
-          <text v-if="hasSpec" class="spec-tip">选规格</text>
         </view>
+        <!-- 「选规格」按钮由外部 action 插槽提供，避免与价格行重复渲染导致排版错乱 -->
         <slot name="action" />
       </view>
     </view>
@@ -25,6 +25,7 @@
 </template>
 
 <script setup>
+import { computed } from 'vue';
 import { fixUrl } from '@/config';
 import { price } from '@/utils/format';
 
@@ -33,12 +34,13 @@ const props = defineProps({
   showSales: { type: Boolean, default: true },
 });
 const emit = defineEmits(['open']);
-const soldOut = props.dish.soldOut === 1;
-const isRecommend = props.dish.isRecommend === 1;
-const hasSpec = props.dish.hasSpec === 1;
+/** 接口返回 1/0，也可能为布尔；统一按真值判断且保持响应式 */
+const soldOut = computed(() => Boolean(props.dish.soldOut));
+const isRecommend = computed(() => Boolean(props.dish.isRecommend));
+const hasSpec = computed(() => Boolean(props.dish.hasSpec));
 
 function onOpen() {
-  if (soldOut) return;
+  if (soldOut.value) return;
   emit('open', props.dish);
 }
 </script>
@@ -99,7 +101,7 @@ function onOpen() {
     border-radius: 6rpx;
     &.rec {
       color: $cat-orange;
-      background: rgba(232, 168, 124, 0.18);
+      background: rgba(255, 169, 200, 0.22);
     }
   }
   .tags,
@@ -119,10 +121,13 @@ function onOpen() {
     display: flex;
     align-items: flex-end;
     justify-content: space-between;
+    gap: 16rpx;
   }
   .price-line {
     display: flex;
     align-items: baseline;
+    flex-wrap: wrap;
+    min-width: 0;
   }
   .price {
     color: $coffee-brown;
@@ -134,14 +139,6 @@ function onOpen() {
     font-size: 22rpx;
     color: $text-placeholder;
     text-decoration: line-through;
-  }
-  .spec-tip {
-    margin-left: 12rpx;
-    font-size: 20rpx;
-    color: $cat-orange;
-    border: 1rpx solid $cat-orange;
-    border-radius: 6rpx;
-    padding: 2rpx 8rpx;
   }
 }
 </style>

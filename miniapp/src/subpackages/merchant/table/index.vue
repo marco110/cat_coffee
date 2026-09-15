@@ -50,6 +50,7 @@
 import { ref, computed, onMounted } from 'vue';
 import { onShow } from '@dcloudio/uni-app';
 import { tableList, batchCreateTable } from '@/api/merchant';
+import CtEmpty from '@/components/ct-empty.vue';
 
 const tables = ref([]);
 const batch = ref({ prefix: 'A', start: 1, end: 10, area: '', seats: 2 });
@@ -176,7 +177,7 @@ onShow(() => load());
   flex-direction: column;
   align-items: center;
   &.busy {
-    background: rgba(232, 168, 124, 0.16);
+    background: rgba(255, 169, 200, 0.22);
   }
 }
 .t-no {

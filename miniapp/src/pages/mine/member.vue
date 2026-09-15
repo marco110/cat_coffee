@@ -70,7 +70,7 @@ function go(url) {
 }
 .vip {
   padding: 36rpx 32rpx;
-  background: linear-gradient(135deg, #6f4e37, #4a3527);
+  background: $grad-brand;
   color: #fff;
 }
 .vip-top {

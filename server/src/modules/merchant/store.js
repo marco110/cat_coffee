@@ -7,7 +7,7 @@ const { BizError, CODES } = require('../../common/errors');
 const { n } = require('../../utils/money');
 const { nowSql } = require('../../utils/time');
 const { sid, maskPhone } = require('../../utils/misc');
-const { hash, randomPassword } = require('../../utils/password');
+const { hash, defaultPassword } = require('../../utils/password');
 const { operationLog } = require('../../services/log');
 
 const router = express.Router();
@@ -183,7 +183,7 @@ router.post(
     if (!/^1[3-9]\d{9}$/.test(String(phone || ''))) throw new BizError(CODES.BAD_PARAM, '请输入正确的手机号');
     const exist = await one('SELECT id FROM store_user WHERE phone = ? AND deleted_at IS NULL', [phone]);
     if (exist) throw new BizError(CODES.CONFLICT, '该手机号已注册');
-    const pwd = randomPassword();
+    const pwd = defaultPassword();
     const ins = await exec(
       `INSERT INTO store_user (store_id, phone, password, real_name, role, is_init_password, status, created_at, updated_at)
        VALUES (?,?,?,?,'STAFF',1,1,?,?)`,
@@ -216,7 +216,7 @@ router.post(
   merchantAuth,
   wrap(async (req, res) => {
     const u = await getStoreUser(req);
-    const pwd = randomPassword();
+    const pwd = defaultPassword();
     await exec('UPDATE store_user SET password = ?, is_init_password = 1, login_fail_count = 0, locked_until = NULL, updated_at = ? WHERE id = ?', [
       hash(pwd),
       nowSql(),

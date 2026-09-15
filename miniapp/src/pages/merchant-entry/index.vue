@@ -52,7 +52,7 @@ function logout() {
 .hero {
   padding: 60rpx 40rpx;
   border-radius: $radius-card;
-  background: linear-gradient(135deg, #7d5940, #6f4e37);
+  background: $grad-brand;
   color: #fff;
 }
 .h-title {

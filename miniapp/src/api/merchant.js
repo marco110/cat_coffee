@@ -56,6 +56,9 @@ export function updateCategory(id, data) {
 export function deleteCategory(id) {
   return del(`${M}/category/${id}`, null, { auth: 'merchant' });
 }
+export function updateCategorySort(list) {
+  return put(`${M}/category/sort`, { list }, { auth: 'merchant' });
+}
 
 export function dishList(params) {
   return get(`${M}/dish/list`, params, { auth: 'merchant' });
@@ -77,6 +80,12 @@ export function updateSoldOut(id, soldOut) {
 }
 export function deleteDish(id) {
   return del(`${M}/dish/${id}`, null, { auth: 'merchant' });
+}
+export function updateDishSort(list) {
+  return put(`${M}/dish/sort`, { list }, { auth: 'merchant' });
+}
+export function batchDishCategory(ids, categoryId) {
+  return put(`${M}/dish/batch-category`, { ids, categoryId }, { auth: 'merchant', loading: true });
 }
 export function getDishSpec(id) {
   return get(`${M}/dish/${id}/spec`, null, { auth: 'merchant' });

@@ -204,6 +204,66 @@ router.post(
   })
 );
 
+/** 批量排序 / 批量改状态（必须放在 /dish/:dishId 之前，否则会被 :dishId 匹配掉） */
+router.put(
+  '/dish/sort',
+  merchantAuth,
+  wrap(async (req, res) => {
+    const list = (req.body || {}).list || [];
+    await tx(async (conn) => {
+      for (const it of list) {
+        await conn.exec('UPDATE dish SET sort = ?, updated_at = ? WHERE id = ? AND store_id = ?', [
+          Number(it.sort || 0),
+          nowSql(),
+          it.id,
+          req.storeId,
+        ]);
+      }
+    });
+    return ok(res, { ok: true }, '排序已保存');
+  })
+);
+
+router.put(
+  '/dish/batch-status',
+  merchantAuth,
+  wrap(async (req, res) => {
+    const { ids, status } = req.body || {};
+    if (!ids || !ids.length) throw new BizError(CODES.BAD_PARAM, '请选择菜品');
+    const ph = ids.map(() => '?').join(',');
+    await exec(`UPDATE dish SET status = ?, updated_at = ? WHERE id IN (${ph}) AND store_id = ?`, [
+      status ? 1 : 0,
+      nowSql(),
+      ...ids,
+      req.storeId,
+    ]);
+    return ok(res, { ok: true }, '操作成功');
+  })
+);
+
+/** 批量修改菜品所属分类 */
+router.put(
+  '/dish/batch-category',
+  merchantAuth,
+  wrap(async (req, res) => {
+    const { ids, categoryId } = req.body || {};
+    if (!ids || !ids.length) throw new BizError(CODES.BAD_PARAM, '请选择菜品');
+    if (!categoryId) throw new BizError(CODES.BAD_PARAM, '请选择分类');
+    const c = await one('SELECT id, name FROM category WHERE id = ? AND store_id = ? AND deleted_at IS NULL', [
+      categoryId,
+      req.storeId,
+    ]);
+    if (!c) throw new BizError(CODES.NOT_FOUND, '分类不存在');
+    const ph = ids.map(() => '?').join(',');
+    const r = await exec(
+      `UPDATE dish SET category_id = ?, updated_at = ? WHERE id IN (${ph}) AND store_id = ? AND deleted_at IS NULL`,
+      [categoryId, nowSql(), ...ids, req.storeId]
+    );
+    await logOp(req, 'UPDATE', `批量移动 ${r.affectedRows} 个菜品到分类：${c.name}`, c.id);
+    return ok(res, { affected: r.affectedRows }, '已更新分类');
+  })
+);
+
 router.put(
   '/dish/:dishId',
   merchantAuth,
@@ -267,35 +327,6 @@ router.put(
     const soldOut = Number((req.body || {}).soldOut) ? 1 : 0;
     await exec('UPDATE dish SET sold_out = ?, updated_at = ? WHERE id = ?', [soldOut, nowSql(), d.id]);
     return ok(res, { soldOut }, soldOut ? '已标记沽清' : '已取消沽清');
-  })
-);
-
-router.put(
-  '/dish/sort',
-  merchantAuth,
-  wrap(async (req, res) => {
-    const list = (req.body || {}).list || [];
-    await tx(async (conn) => {
-      for (const it of list) {
-        await conn.exec('UPDATE dish SET sort = ? WHERE id = ? AND store_id = ?', [Number(it.sort || 0), it.id, req.storeId]);
-      }
-    });
-    return ok(res, { ok: true }, '排序已保存');
-  })
-);
-
-router.put(
-  '/dish/batch-status',
-  merchantAuth,
-  wrap(async (req, res) => {
-    const { ids, status } = req.body || {};
-    if (!ids || !ids.length) throw new BizError(CODES.BAD_PARAM, '请选择菜品');
-    const ph = ids.map(() => '?').join(',');
-    await exec(
-      `UPDATE dish SET status = ?, updated_at = ? WHERE id IN (${ph}) AND store_id = ?`,
-      [status ? 1 : 0, nowSql(), ...ids, req.storeId]
-    );
-    return ok(res, { ok: true }, '操作成功');
   })
 );
 

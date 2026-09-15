@@ -1,5 +1,6 @@
 const bcrypt = require('bcryptjs');
 const crypto = require('crypto');
+const config = require('../config');
 
 const COST = 10;
 
@@ -20,4 +21,9 @@ function randomPassword() {
     .join('');
 }
 
-module.exports = { hash, compare, randomPassword };
+/** 门店账号（店主 / 店员）的默认密码：新建与重置密码都用它 */
+function defaultPassword() {
+  return (config.storeUser && config.storeUser.defaultPassword) || 'aimao2026';
+}
+
+module.exports = { hash, compare, randomPassword, defaultPassword };

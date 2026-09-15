@@ -7,7 +7,7 @@ const { BizError, CODES } = require('../../common/errors');
 const { n } = require('../../utils/money');
 const { nowSql, rangeToSql } = require('../../utils/time');
 const { sid, maskPhone, isPhone } = require('../../utils/misc');
-const { hash, randomPassword } = require('../../utils/password');
+const { hash, defaultPassword } = require('../../utils/password');
 const { operationLog } = require('../../services/log');
 
 const router = express.Router();
@@ -31,7 +31,7 @@ router.post(
     const exist = await one('SELECT id FROM store_user WHERE phone = ? AND deleted_at IS NULL', [b.ownerPhone]);
     if (exist) throw new BizError(CODES.CONFLICT, '该手机号已是其他门店账号');
 
-    const pwd = randomPassword();
+    const pwd = defaultPassword();
     let storeId;
     let userId;
     await tx(async (conn) => {
@@ -92,7 +92,10 @@ router.get(
     const where = ['s.deleted_at IS NULL'];
     const params = [];
     if (req.query.keyword) {
-      where.push('(s.name LIKE ? OR su.phone LIKE ? OR su.real_name LIKE ?)');
+      // 用 EXISTS 子查询而不是 JOIN，避免一个门店有多个账号时列表行数被放大
+      where.push(
+        `(s.name LIKE ? OR EXISTS (SELECT 1 FROM store_user su WHERE su.store_id = s.id AND su.deleted_at IS NULL AND (su.phone LIKE ? OR su.real_name LIKE ?)))`
+      );
       params.push(`%${req.query.keyword}%`, `%${req.query.keyword}%`, `%${req.query.keyword}%`);
     }
     if (req.query.status) {
@@ -109,9 +112,12 @@ router.get(
     }
     const wsql = where.join(' AND ');
     const total = await one(`SELECT COUNT(1) AS c FROM store s WHERE ${wsql}`, params);
+    // 店主信息用标量子查询取，保证「一个门店只返回一行」
     const rows = await query(
-      `SELECT s.*, su.real_name AS owner_name, su.phone AS owner_phone
-       FROM store s LEFT JOIN store_user su ON su.store_id = s.id AND su.role = 'OWNER' AND su.deleted_at IS NULL
+      `SELECT s.*,
+         (SELECT su.real_name FROM store_user su WHERE su.store_id = s.id AND su.role = 'OWNER' AND su.deleted_at IS NULL ORDER BY su.id LIMIT 1) AS owner_name,
+         (SELECT su.phone FROM store_user su WHERE su.store_id = s.id AND su.role = 'OWNER' AND su.deleted_at IS NULL ORDER BY su.id LIMIT 1) AS owner_phone
+       FROM store s
        WHERE ${wsql} ORDER BY s.id DESC LIMIT ${limit} OFFSET ${offset}`,
       params
     );
@@ -150,7 +156,7 @@ router.get(
   wrap(async (req, res) => {
     const s = await one('SELECT * FROM store WHERE id = ? AND deleted_at IS NULL', [req.params.storeId]);
     if (!s) throw new BizError(CODES.NOT_FOUND, '门店不存在');
-    const owner = await one("SELECT * FROM store_user WHERE store_id = ? AND role = 'OWNER' AND deleted_at IS NULL", [s.id]);
+    const owner = await one("SELECT * FROM store_user WHERE store_id = ? AND role = 'OWNER' AND deleted_at IS NULL ORDER BY id LIMIT 1", [s.id]);
     const stats = await one(
       `SELECT COUNT(1) AS order_count, IFNULL(SUM(pay_amount),0) AS revenue FROM order_main
        WHERE store_id = ? AND deleted_at IS NULL AND status = 'COMPLETED'`,
@@ -254,9 +260,9 @@ router.post(
   adminAuth,
   wrap(async (req, res) => {
     const s = await getStore(req);
-    const owner = await one("SELECT * FROM store_user WHERE store_id = ? AND role = 'OWNER' AND deleted_at IS NULL", [s.id]);
+    const owner = await one("SELECT * FROM store_user WHERE store_id = ? AND role = 'OWNER' AND deleted_at IS NULL ORDER BY id LIMIT 1", [s.id]);
     if (!owner) throw new BizError(CODES.NOT_FOUND, '该门店无店主账号');
-    const pwd = randomPassword();
+    const pwd = defaultPassword();
     await exec(
       'UPDATE store_user SET password = ?, is_init_password = 1, login_fail_count = 0, locked_until = NULL, updated_at = ? WHERE id = ?',
       [hash(pwd), nowSql(), owner.id]

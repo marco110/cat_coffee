@@ -39,10 +39,15 @@
             :key="d.id"
             :dish="d"
             :show-sales="showSales"
-            @open="openSpec"
+            @open="openDish"
           >
             <template #action>
-              <view v-if="d.hasSpec" class="select-btn" @click.stop="openSpec(d)">选规格</view>
+              <view
+                v-if="d.hasSpec"
+                class="select-btn"
+                :class="{ disabled: Number(d.soldOut) === 1 }"
+                @click.stop="openDish(d)"
+              >选规格</view>
               <ct-qty v-else :value="qtyOf(d.id)" @change="(v) => setSimple(d, v)" />
             </template>
           </ct-dish-item>
@@ -73,8 +78,6 @@
       </view>
     </view>
 
-    <ct-spec-popup :dish="activeDish" :visible="specVisible" @close="specVisible = false" @confirm="onSpecConfirm" />
-
     <!-- 桌号选择 -->
     <view v-if="showTables" class="cart-mask" @click="showTables = false">
       <view class="table-panel" @click.stop>
@@ -101,11 +104,14 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue';
 import { onLoad } from '@dcloudio/uni-app';
-import { getMenu, getTables, getDish, searchDish } from '@/api/customer';
+import { getMenu, getTables, searchDish } from '@/api/customer';
 import { price } from '@/utils/format';
 import { useCartStore } from '@/store/cart';
 import { useUserStore } from '@/store/user';
 import { DEFAULT_STORE_ID, ensureLogin } from '@/utils/auth';
+import CtDishItem from '@/components/ct-dish-item.vue';
+import CtQty from '@/components/ct-qty.vue';
+import CtCartBar from '@/components/ct-cart-bar.vue';
 
 const cart = useCartStore();
 const userStore = useUserStore();
@@ -124,8 +130,6 @@ const tableNo = ref('');
 const tableGroups = ref([]);
 const showTables = ref(false);
 
-const specVisible = ref(false);
-const activeDish = ref({});
 const panelVisible = ref(false);
 
 onLoad(async (opt) => {
@@ -194,14 +198,10 @@ function setSimple(dish, v) {
     if (row) cart.setQuantity(row.key, v);
   }
 }
-async function openSpec(dish) {
-  const detail = await getDish(dish.id);
-  activeDish.value = detail;
-  specVisible.value = true;
-}
-function onSpecConfirm(payload) {
-  cart.add(activeDish.value, payload);
-  uni.showToast({ title: '已加入购物车', icon: 'none' });
+/** 点击菜品：跳转商品详情页（图片介绍 / 规格选择 / 加购都在该页完成） */
+function openDish(dish) {
+  if (Number(dish.soldOut) === 1) return uni.showToast({ title: '今日已售罄', icon: 'none' });
+  uni.navigateTo({ url: `/pages/order/dish?id=${dish.id}&storeId=${storeId.value}` });
 }
 function goConfirm() {
   if (!cart.count) return;
@@ -331,11 +331,20 @@ function goConfirm() {
   padding: 12rpx 8rpx;
 }
 .select-btn {
-  background: $cat-orange;
+  flex-shrink: 0;
+  height: 48rpx;
+  padding: 0 24rpx;
+  border-radius: 24rpx;
+  background: $coffee-brown;
   color: #fff;
   font-size: 24rpx;
-  padding: 10rpx 24rpx;
-  border-radius: 26rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  &.disabled {
+    background: $border-color;
+    color: $text-placeholder;
+  }
 }
 .bottom-space {
   height: 160rpx;

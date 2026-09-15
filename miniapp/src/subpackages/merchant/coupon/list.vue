@@ -38,6 +38,7 @@ import { ref, onMounted } from 'vue';
 import { onShow } from '@dcloudio/uni-app';
 import { couponList, couponStats, updateCouponStatus, deleteCoupon, grantCoupon, memberList } from '@/api/merchant';
 import { price, couponValue, dateText } from '@/utils/format';
+import CtEmpty from '@/components/ct-empty.vue';
 
 const list = ref([]);
 const stats = ref({});

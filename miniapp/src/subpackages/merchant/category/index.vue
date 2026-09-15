@@ -1,19 +1,20 @@
 <template>
   <view class="page">
     <view v-for="(c, i) in list" :key="c.id" class="card item">
-      <view class="left">
-        <text class="name">{{ c.name }}</text>
+      <view class="left" @click="goDishes(c)">
+        <text class="name">{{ c.name }} ›</text>
         <text class="meta">排序 {{ c.sort }} · {{ c.dishCount }} 个菜品 · {{ c.status === 1 ? '显示中' : '已隐藏' }}</text>
       </view>
       <view class="ops">
-        <text class="op" @click="move(i, -1)">↑</text>
-        <text class="op" @click="move(i, 1)">↓</text>
+        <text class="op" :class="{ disabled: i === 0 }" @click="move(i, -1)">↑</text>
+        <text class="op" :class="{ disabled: i === list.length - 1 }" @click="move(i, 1)">↓</text>
         <text class="op" @click="edit(c)">编辑</text>
         <text class="op danger" @click="remove(c)">删除</text>
       </view>
     </view>
 
-    <ct-empty v-if="!list.length" text="暂无分类" />
+    <view class="tip-bar">用 ↑ ↓ 调整顺序，顾客端菜单的分类和菜品都按这里的顺序展示</view>
+    <ct-empty v-if="!list.length" text="暂无分类，先建一个吧" />
     <view class="add-btn" @click="edit(null)">+ 新建分类</view>
 
     <view v-if="editing" class="mask" @click="editing = false">
@@ -29,7 +30,7 @@
         </view>
         <view class="f">
           <text class="label">显示状态</text>
-          <switch :checked="form.status === 1" color="#6F4E37" @change="(e) => (form.status = e.detail.value ? 1 : 0)" />
+          <switch :checked="form.status === 1" color="#FF6FA5" @change="(e) => (form.status = e.detail.value ? 1 : 0)" />
         </view>
         <view class="p-btns">
           <text class="cancel" @click="editing = false">取消</text>
@@ -43,7 +44,8 @@
 <script setup>
 import { ref, onMounted } from 'vue';
 import { onShow } from '@dcloudio/uni-app';
-import { categoryList, createCategory, updateCategory, deleteCategory } from '@/api/merchant';
+import { categoryList, createCategory, updateCategory, deleteCategory, updateCategorySort } from '@/api/merchant';
+import CtEmpty from '@/components/ct-empty.vue';
 
 const list = ref([]);
 const editing = ref(false);
@@ -53,7 +55,8 @@ async function load() {
   list.value = await categoryList();
 }
 function edit(c) {
-  form.value = c ? { ...c } : { id: '', name: '', sort: (list.value.length + 1) * 10, status: 1 };
+  const nextSort = (list.value.reduce((m, x) => Math.max(m, Number(x.sort) || 0), 0) || 0) + 10;
+  form.value = c ? { ...c, status: Number(c.status) } : { id: '', name: '', sort: nextSort, status: 1 };
   editing.value = true;
 }
 async function save() {
@@ -64,6 +67,10 @@ async function save() {
   editing.value = false;
   await load();
 }
+function goDishes(c) {
+  uni.navigateTo({ url: `/subpackages/merchant/dish/list?categoryId=${c.id}` });
+}
+
 async function remove(c) {
   uni.showModal({
     title: '删除分类',
@@ -74,18 +81,30 @@ async function remove(c) {
         await deleteCategory(c.id);
         await load();
       } catch (e) {
-        uni.showToast({ title: e.msg || '删除失败', icon: 'none' });
+        uni.showModal({
+          title: '无法删除',
+          content: `${e.msg || '删除失败'}。可到菜单管理里先把这些菜品「改分类」移走，再回来删除。`,
+          showCancel: false,
+        });
       }
     },
   });
 }
+
+/** 分类排序：整体重排后批量提交，避免 sort 值相同时交换无效 */
 async function move(i, dir) {
   const target = i + dir;
   if (target < 0 || target >= list.value.length) return;
-  const a = list.value[i];
-  const b = list.value[target];
-  await Promise.all([updateCategory(a.id, { sort: b.sort }), updateCategory(b.id, { sort: a.sort })]);
-  await load();
+  const arr = [...list.value];
+  [arr[i], arr[target]] = [arr[target], arr[i]];
+  const sorted = arr.map((c, idx) => ({ ...c, sort: (idx + 1) * 10 }));
+  list.value = sorted;
+  try {
+    await updateCategorySort(sorted.map((c) => ({ id: c.id, sort: c.sort })));
+  } catch (e) {
+    uni.showToast({ title: e.msg || '排序失败', icon: 'none' });
+    await load();
+  }
 }
 
 onMounted(() => load());
@@ -128,6 +147,17 @@ onShow(() => load());
     color: $danger;
     border-color: $danger;
   }
+  &.disabled {
+    opacity: 0.35;
+  }
+}
+.tip-bar {
+  margin-bottom: 20rpx;
+  padding: 18rpx 24rpx;
+  border-radius: 12rpx;
+  background: #fff;
+  color: $text-secondary;
+  font-size: 24rpx;
 }
 .add-btn {
   position: fixed;

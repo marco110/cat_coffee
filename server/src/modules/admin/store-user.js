@@ -6,7 +6,7 @@ const { ok, page, paging } = require('../../common/response');
 const { BizError, CODES } = require('../../common/errors');
 const { nowSql } = require('../../utils/time');
 const { sid, maskPhone, isPhone } = require('../../utils/misc');
-const { hash, randomPassword } = require('../../utils/password');
+const { hash, defaultPassword } = require('../../utils/password');
 const { operationLog } = require('../../services/log');
 
 const router = express.Router();
@@ -75,7 +75,14 @@ router.post(
     if (!store) throw new BizError(CODES.NOT_FOUND, '门店不存在');
     const exist = await one('SELECT id FROM store_user WHERE phone = ? AND deleted_at IS NULL', [phone]);
     if (exist) throw new BizError(CODES.CONFLICT, '该手机号已注册');
-    const pwd = randomPassword();
+    if (role === 'OWNER') {
+      const owner = await one(
+        "SELECT id FROM store_user WHERE store_id = ? AND role = 'OWNER' AND deleted_at IS NULL",
+        [storeId]
+      );
+      if (owner) throw new BizError(CODES.CONFLICT, '该门店已有店主账号，如需更换请先编辑原账号');
+    }
+    const pwd = defaultPassword();
     const ins = await exec(
       `INSERT INTO store_user (store_id, phone, password, real_name, role, is_init_password, status, created_at, updated_at)
        VALUES (?,?,?,?,?,1,1,?,?)`,
@@ -92,6 +99,13 @@ router.put(
   wrap(async (req, res) => {
     const u = await getUser(req);
     const { realName, role, status } = req.body || {};
+    if (role === 'OWNER' && u.role !== 'OWNER') {
+      const owner = await one(
+        "SELECT id FROM store_user WHERE store_id = ? AND role = 'OWNER' AND deleted_at IS NULL AND id <> ?",
+        [u.store_id, u.id]
+      );
+      if (owner) throw new BizError(CODES.CONFLICT, '该门店已有店主账号');
+    }
     await exec('UPDATE store_user SET real_name = ?, role = ?, status = ?, updated_at = ? WHERE id = ?', [
       realName === undefined ? u.real_name : realName,
       role === undefined ? u.role : role,
@@ -109,7 +123,7 @@ router.post(
   adminAuth,
   wrap(async (req, res) => {
     const u = await getUser(req);
-    const pwd = randomPassword();
+    const pwd = defaultPassword();
     await exec(
       'UPDATE store_user SET password = ?, is_init_password = 1, login_fail_count = 0, locked_until = NULL, updated_at = ? WHERE id = ?',
       [hash(pwd), nowSql(), u.id]

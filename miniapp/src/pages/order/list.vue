@@ -44,6 +44,8 @@ import { getOrderList, cancelOrder, reorder } from '@/api/customer';
 import { price } from '@/utils/format';
 import { useCartStore } from '@/store/cart';
 import { useUserStore } from '@/store/user';
+import CtStatusTag from '@/components/ct-status-tag.vue';
+import CtEmpty from '@/components/ct-empty.vue';
 
 const TABS = [
   { label: '全部', value: '' },

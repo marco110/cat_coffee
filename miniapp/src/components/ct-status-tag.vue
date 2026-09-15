@@ -30,7 +30,7 @@ const cls = computed(() => item.value.c);
 }
 .brown {
   color: $coffee-brown;
-  background: rgba(111, 78, 55, 0.1);
+  background: rgba(255, 111, 165, 0.12);
 }
 .warn {
   color: $warning;

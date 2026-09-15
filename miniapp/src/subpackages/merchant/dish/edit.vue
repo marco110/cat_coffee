@@ -17,6 +17,7 @@
         <picker :range="cats" range-key="name" :value="catIndex" @change="onCat">
           <view class="picker">{{ catIndex >= 0 ? cats[catIndex].name : '请选择' }}</view>
         </picker>
+        <text class="mini-link" @click="goCategory">管理</text>
       </view>
       <view class="row">
         <text class="label">售价（元）</text>
@@ -38,11 +39,23 @@
       </view>
       <view class="row">
         <text class="label">是否参与折扣</text>
-        <switch :checked="form.isDiscount" color="#6F4E37" @change="(e) => (form.isDiscount = e.detail.value)" />
+        <switch :checked="form.isDiscount" color="#FF6FA5" @change="(e) => (form.isDiscount = e.detail.value)" />
       </view>
       <view class="row">
         <text class="label">门店推荐</text>
-        <switch :checked="form.isRecommend" color="#6F4E37" @change="(e) => (form.isRecommend = e.detail.value)" />
+        <switch :checked="form.isRecommend" color="#FF6FA5" @change="(e) => (form.isRecommend = e.detail.value)" />
+      </view>
+    </view>
+
+    <view class="card block">
+      <view class="bt">商品介绍图片（详情页轮播 / 长图介绍）</view>
+      <text class="tip">最多 9 张，建议竖图 3:4。第一张会作为详情页轮播首图</text>
+      <view class="imgs">
+        <view v-for="(img, i) in form.images" :key="i" class="img-wrap">
+          <image class="img" :src="fixUrl(img)" mode="aspectFill" @click="previewIntro(i)" />
+          <text class="del" @click="removeIntro(i)">×</text>
+        </view>
+        <view v-if="form.images.length < 9" class="img-wrap add" @click="chooseIntroImages">+</view>
       </view>
     </view>
 
@@ -66,25 +79,24 @@
     <view class="card block">
       <view class="row">
         <text class="label">售卖状态</text>
-        <switch :checked="form.status === 'ON'" color="#6F4E37" @change="(e) => (form.status = e.detail.value ? 'ON' : 'OFF')" />
+        <switch :checked="form.status === 'ON'" color="#FF6FA5" @change="(e) => (form.status = e.detail.value ? 'ON' : 'OFF')" />
       </view>
       <view class="row">
         <text class="label">今日售罄</text>
-        <switch :checked="form.soldOut" color="#6F4E37" @change="(e) => (form.soldOut = e.detail.value)" />
+        <switch :checked="form.soldOut" color="#FF6FA5" @change="(e) => (form.soldOut = e.detail.value)" />
       </view>
     </view>
 
     <view class="footer">
-      <view v-if="form.id" class="del" @click="remove">删除菜品</view>
       <view class="save" @click="save">保存</view>
     </view>
   </view>
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue';
-import { onLoad } from '@dcloudio/uni-app';
-import { dishDetail, createDish, updateDish, deleteDish, categoryList, getDishSpec } from '@/api/merchant';
+import { ref, computed, onMounted, watch } from 'vue';
+import { onLoad, onShow } from '@dcloudio/uni-app';
+import { dishDetail, createDish, updateDish, categoryList, getDishSpec } from '@/api/merchant';
 import { uploadFile } from '@/api/request';
 import { fixUrl } from '@/config';
 import { useUserStore } from '@/store/user';
@@ -111,6 +123,7 @@ const form = ref({
   stockMode: 'UNLIMITED',
   dailyLimit: 0,
   cover: '',
+  images: [],
   description: '',
   tags: '',
   isDiscount: true,
@@ -121,29 +134,47 @@ const form = ref({
 
 const loading = ref(false);
 
+let dishId = '';
+
 onLoad(async (opt) => {
-  cats.value = await categoryList();
-  if (opt.id) {
-    const d = await dishDetail(opt.id);
-    form.value = {
-      ...form.value,
-      ...d,
-      isDiscount: !!d.isDiscount,
-      isRecommend: !!d.isRecommend,
-      soldOut: !!d.soldOut,
-      status: Number(d.status) === 1 ? 'ON' : 'OFF',
-      stockMode: d.stockMode || 'UNLIMITED',
-      tags: (d.tags || []).join(','),
-    };
-    catIndex.value = cats.value.findIndex((c) => c.id === d.categoryId);
-    try {
-      const spec = await getDishSpec(opt.id);
-      specPreview.value = spec.specGroups || [];
-    } catch (e) {
-      /* ignore */
-    }
+  dishId = opt.id || '';
+  await loadCats();
+  if (!dishId) return;
+  const d = await dishDetail(dishId);
+  form.value = {
+    ...form.value,
+    ...d,
+    isDiscount: !!d.isDiscount,
+    isRecommend: !!d.isRecommend,
+    soldOut: !!d.soldOut,
+    status: Number(d.status) === 1 ? 'ON' : 'OFF',
+    stockMode: d.stockMode || 'UNLIMITED',
+    tags: (d.tags || []).join(','),
+    images: d.images || [],
+  };
+  syncCatIndex();
+  try {
+    const spec = await getDishSpec(dishId);
+    specPreview.value = spec.specGroups || [];
+  } catch (e) {
+    /* ignore */
   }
 });
+
+/** 从分类管理页返回时刷新分类（watch 会自动重新定位已选中的分类） */
+onShow(() => loadCats());
+watch(cats, () => syncCatIndex());
+
+async function loadCats() {
+  cats.value = await categoryList();
+}
+function syncCatIndex() {
+  catIndex.value = cats.value.findIndex((c) => c.id === form.value.categoryId);
+}
+
+function goCategory() {
+  uni.navigateTo({ url: '/subpackages/merchant/category/index' });
+}
 
 function onCat(e) {
   catIndex.value = e.detail.value;
@@ -165,19 +196,55 @@ function chooseImage() {
   });
 }
 
+/** 商品介绍图片：多图上传，最多 9 张 */
+function chooseIntroImages() {
+  const remain = 9 - form.value.images.length;
+  if (remain <= 0) return uni.showToast({ title: '最多 9 张', icon: 'none' });
+  uni.chooseImage({
+    count: remain,
+    sizeType: ['compressed'],
+    success: async (res) => {
+      uni.showLoading({ title: '上传中', mask: true });
+      try {
+        for (const p of res.tempFilePaths) {
+          const url = await uploadFile(p, { auth: 'merchant', bizType: 'DISH', storeId: userStore.merchantStore?.id || 0 });
+          form.value.images.push(url);
+        }
+      } catch (e) {
+        uni.showToast({ title: '上传失败', icon: 'none' });
+      } finally {
+        uni.hideLoading();
+      }
+    },
+  });
+}
+function removeIntro(i) {
+  form.value.images.splice(i, 1);
+}
+function previewIntro(i) {
+  uni.previewImage({ current: i, urls: form.value.images.map((u) => fixUrl(u)) });
+}
+
 function goSpec() {
   uni.showToast({ title: '规格配置请在 Web 管理后台或联系超管配置', icon: 'none' });
 }
 
 async function save() {
   if (!form.value.name) return uni.showToast({ title: '请填写菜品名称', icon: 'none' });
-  if (!form.value.categoryId) return uni.showToast({ title: '请选择分类', icon: 'none' });
+  if (!form.value.categoryId) {
+    return uni.showModal({
+      title: '请先创建分类',
+      content: '菜品需要归属到某个分类，现在去创建分类？',
+      success: (r) => r.confirm && goCategory(),
+    });
+  }
   if (!Number(form.value.price)) return uni.showToast({ title: '请填写售价', icon: 'none' });
   if (loading.value) return;
   loading.value = true;
   const payload = {
     ...form.value,
     tags: form.value.tags ? String(form.value.tags).split(/[,，]/).map((s) => s.trim()).filter(Boolean) : [],
+    images: form.value.images || [],
     isDiscount: form.value.isDiscount ? 1 : 0,
     isRecommend: form.value.isRecommend ? 1 : 0,
     soldOut: form.value.soldOut ? 1 : 0,
@@ -197,18 +264,6 @@ async function save() {
   }
 }
 
-async function remove() {
-  uni.showModal({
-    title: '删除菜品',
-    content: '确认删除该菜品？删除后不可恢复',
-    success: async (r) => {
-      if (!r.confirm) return;
-      await deleteDish(form.value.id);
-      uni.showToast({ title: '已删除', icon: 'none' });
-      setTimeout(() => uni.navigateBack(), 500);
-    },
-  });
-}
 </script>
 
 <style lang="scss" scoped>
@@ -244,6 +299,12 @@ async function remove() {
   font-size: 28rpx;
   color: $coffee-brown;
 }
+.mini-link {
+  margin-left: 16rpx;
+  flex-shrink: 0;
+  font-size: 24rpx;
+  color: $coffee-brown;
+}
 .ph {
   color: $text-placeholder;
 }
@@ -269,6 +330,47 @@ async function remove() {
   font-size: 28rpx;
   font-weight: 600;
   margin: 12rpx 0;
+}
+.imgs {
+  margin-top: 16rpx;
+  display: flex;
+  flex-wrap: wrap;
+}
+.img-wrap {
+  position: relative;
+  width: 150rpx;
+  height: 150rpx;
+  margin: 0 16rpx 16rpx 0;
+  border-radius: 12rpx;
+  overflow: visible;
+}
+.img {
+  width: 150rpx;
+  height: 150rpx;
+  border-radius: 12rpx;
+  background: $cream-white;
+}
+.add {
+  background: $cream-white;
+  color: $text-placeholder;
+  font-size: 60rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.del {
+  position: absolute;
+  right: -10rpx;
+  top: -10rpx;
+  width: 40rpx;
+  height: 40rpx;
+  border-radius: 50%;
+  background: $danger;
+  color: #fff;
+  font-size: 28rpx;
+  text-align: center;
+  line-height: 36rpx;
+  z-index: 2;
 }
 .textarea {
   width: 100%;

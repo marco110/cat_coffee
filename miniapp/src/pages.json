@@ -2,11 +2,15 @@
   "pages": [
     {
       "path": "pages/index/index",
-      "style": { "navigationBarTitleText": "爱猫咖啡", "navigationBarBackgroundColor": "#6F4E37", "navigationBarTextStyle": "white" }
+      "style": { "navigationBarTitleText": "爱猫咖啡", "navigationBarBackgroundColor": "#FF6FA5", "navigationBarTextStyle": "white" }
     },
     {
       "path": "pages/order/menu",
-      "style": { "navigationBarTitleText": "点餐", "navigationBarBackgroundColor": "#6F4E37", "navigationBarTextStyle": "white" }
+      "style": { "navigationBarTitleText": "点餐", "navigationBarBackgroundColor": "#FF6FA5", "navigationBarTextStyle": "white" }
+    },
+    {
+      "path": "pages/order/dish",
+      "style": { "navigationBarTitleText": "商品详情", "navigationBarBackgroundColor": "#FF6FA5", "navigationBarTextStyle": "white" }
     },
     {
       "path": "pages/order/confirm",
@@ -56,6 +60,7 @@
         { "path": "order/modify", "style": { "navigationBarTitleText": "修改订单" } },
         { "path": "dish/list", "style": { "navigationBarTitleText": "菜单管理", "enablePullDownRefresh": true } },
         { "path": "dish/edit", "style": { "navigationBarTitleText": "编辑菜品" } },
+        { "path": "dish/preview", "style": { "navigationBarTitleText": "菜品预览" } },
         { "path": "category/index", "style": { "navigationBarTitleText": "分类管理" } },
         { "path": "table/index", "style": { "navigationBarTitleText": "桌位管理" } },
         { "path": "coupon/list", "style": { "navigationBarTitleText": "优惠券管理" } },
@@ -68,8 +73,8 @@
     }
   ],
   "tabBar": {
-    "color": "#9C8B7A",
-    "selectedColor": "#6F4E37",
+    "color": "#A8889C",
+    "selectedColor": "#F0487E",
     "backgroundColor": "#FFFFFF",
     "borderStyle": "white",
     "list": [
@@ -81,11 +86,11 @@
   "globalStyle": {
     "navigationBarTextStyle": "black",
     "navigationBarTitleText": "爱猫咖啡",
-    "navigationBarBackgroundColor": "#F5EFE6",
-    "backgroundColor": "#F5EFE6",
+    "navigationBarBackgroundColor": "#FFFFFF",
+    "backgroundColor": "#FFF6F9",
     "backgroundTextStyle": "dark"
   },
   "easycom": {
-    "^ct-(.*)": "@/components/ct-$1.vue"
+    "^ct-(.*)": "/components/ct-$1.vue"
   }
 }

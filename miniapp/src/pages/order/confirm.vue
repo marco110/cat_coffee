@@ -37,7 +37,7 @@
     <view v-if="pointsEnabled" class="card block">
       <view class="row">
         <text class="label">积分抵扣（{{ member.points }} 分，可抵 ¥{{ price(pointsInfo.maxDeductAmount || 0) }}）</text>
-        <switch :checked="usePoints" color="#6F4E37" @change="onTogglePoints" />
+        <switch :checked="usePoints" color="#FF6FA5" @change="onTogglePoints" />
       </view>
     </view>
 
@@ -103,6 +103,7 @@ import { fixUrl } from '@/config';
 import { price, discountText, dateText } from '@/utils/format';
 import { useCartStore } from '@/store/cart';
 import { useUserStore } from '@/store/user';
+import CtQty from '@/components/ct-qty.vue';
 
 const cart = useCartStore();
 const userStore = useUserStore();
@@ -370,7 +371,7 @@ async function submit() {
   background: $cream-white;
   margin-bottom: 16rpx;
   &.on {
-    background: rgba(111, 78, 55, 0.1);
+    background: rgba(255, 111, 165, 0.12);
     border: 2rpx solid $coffee-brown;
   }
   &.disabled {

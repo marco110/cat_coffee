@@ -27,6 +27,7 @@ import { onReachBottom } from '@dcloudio/uni-app';
 import { memberList, adjustMember } from '@/api/merchant';
 import { fixUrl } from '@/config';
 import { price } from '@/utils/format';
+import CtEmpty from '@/components/ct-empty.vue';
 
 const list = ref([]);
 const keyword = ref('');

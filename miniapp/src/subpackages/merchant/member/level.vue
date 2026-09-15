@@ -94,7 +94,7 @@ onShow(() => load());
 .discount {
   padding: 8rpx 24rpx;
   border-radius: 24rpx;
-  background: rgba(111, 78, 55, 0.1);
+  background: rgba(255, 111, 165, 0.12);
   color: $coffee-brown;
   font-size: 24rpx;
 }

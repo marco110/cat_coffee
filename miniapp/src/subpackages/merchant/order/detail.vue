@@ -57,6 +57,7 @@ import { ref, onMounted } from 'vue';
 import { onLoad } from '@dcloudio/uni-app';
 import { orderDetail, orderLogs, orderAction, orderPay } from '@/api/merchant';
 import { price } from '@/utils/format';
+import CtStatusTag from '@/components/ct-status-tag.vue';
 
 const BTN = {
   ACCEPT: '接单',

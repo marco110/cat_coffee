@@ -179,7 +179,7 @@ async function toggleStatus(row) {
 }
 
 async function resetPwd(row) {
-  await ElMessageBox.confirm(`确认重置「${row.name}」店主的登录密码？`, '重置密码', { type: 'warning' });
+  await ElMessageBox.confirm(`确认将「${row.name}」店主的登录密码重置为 aimao2026？`, '重置密码', { type: 'warning' });
   const res = await resetStorePassword(row.id);
   ElMessageBox.alert(`账号：${res.phone}<br/>新密码：${res.initPassword}`, '重置成功', { dangerouslyUseHTMLString: true });
 }

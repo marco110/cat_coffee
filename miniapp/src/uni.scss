@@ -1,24 +1,46 @@
-/* 爱猫咖啡 · 视觉规范变量（04-视觉设计规范） */
-$coffee-brown: #6f4e37;
-$cream-white: #f5efe6;
-$cat-orange: #e8a87c;
-$text-primary: #3d2c1e;
-$text-secondary: #9c8b7a;
-$text-placeholder: #bfb3a6;
-$border-color: #ede4d9;
-$bg-page: #f5efe6;
+/* 爱猫咖啡 · 视觉规范变量
+   风格：Hello Kitty 风（草莓粉 / 圆润 / 蝴蝶结 / 猫爪），与 admin-web 保持一致 */
+
+/* ---- 品牌色 ---- */
+$pink: #ff6fa5;        /* 主色 草莓粉 */
+$pink-dark: #f0487e;   /* 强调/价格 */
+$pink-light: #ffa9c8;  /* 浅粉 */
+$pink-soft: #ffe3ee;   /* 背景粉 */
+$red: #ef3d6b;         /* 蝴蝶结红 */
+$yellow: #ffd84d;      /* 点缀黄 */
+$mint: #6fd3c7;        /* 点缀薄荷 */
+$lilac: #b79bdd;       /* 点缀紫 */
+
+/* ---- 中性色 ---- */
+$text-primary: #5b3b4a;
+$text-secondary: #a8889c;
+$text-placeholder: #c9afc0;
+$border-color: #f7d9e6;
+$bg-page: #fff6f9;
 $bg-card: #ffffff;
-$success: #67c23a;
-$warning: #e6a23c;
-$danger: #f56c6c;
 
-$radius-card: 16rpx;
-$radius-button: 44rpx;
-$radius-tag: 8rpx;
+/* ---- 语义色 ---- */
+$success: #4fc3a1;
+$warning: #ffc53d;
+$danger: #f2637b;
 
-$shadow-card: 0 2rpx 12rpx rgba(111, 78, 55, 0.06);
+/* ---- 兼容旧变量名（原咖啡棕，统一映射到粉色系） ---- */
+$coffee-brown: $pink-dark;   /* 原主色：现指向粉 */
+$cat-orange: $yellow;        /* 原橙色：现指向黄 */
+$cream-white: #ffe9f1;       /* 原米白：现指向浅粉（图片占位底） */
 
-/* 通用类 */
+/* ---- 圆角 / 阴影 ---- */
+$radius-card: 24rpx;
+$radius-button: 999rpx;
+$radius-tag: 999rpx;
+$shadow-card: 0 4rpx 20rpx rgba(240, 72, 128, 0.1);
+$shadow-pop: 0 8rpx 32rpx rgba(240, 72, 128, 0.18);
+
+/* ---- 渐变 ---- */
+$grad-brand: linear-gradient(135deg, #ff9bc2 0%, #ff6fa5 55%, #ef3d6b 100%);
+$grad-ribbon: linear-gradient(90deg, $pink 0%, $yellow 45%, $mint 75%, $lilac 100%);
+
+/* ================= 通用类 ================= */
 .flex-row {
   display: flex;
   flex-direction: row;
@@ -34,6 +56,20 @@ $shadow-card: 0 2rpx 12rpx rgba(111, 78, 55, 0.06);
   border-radius: $radius-card;
   box-shadow: $shadow-card;
 }
+/* 顶部糖果色丝带 */
+.card-ribbon {
+  position: relative;
+  overflow: hidden;
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 6rpx;
+    background: $grad-ribbon;
+  }
+}
 .text-primary {
   color: $text-primary;
 }
@@ -41,5 +77,38 @@ $shadow-card: 0 2rpx 12rpx rgba(111, 78, 55, 0.06);
   color: $text-secondary;
 }
 .price {
-  color: $coffee-brown;
+  color: $pink-dark;
+}
+/* 带猫爪的小标题 */
+.title-paw {
+  display: flex;
+  align-items: center;
+  font-size: 32rpx;
+  font-weight: 700;
+  color: $text-primary;
+  &::before {
+    content: '🐾';
+    margin-right: 10rpx;
+    font-size: 28rpx;
+  }
+}
+/* 主按钮：粉色胶囊 + 阴影 */
+.btn-primary {
+  height: 92rpx;
+  border-radius: $radius-button;
+  background: $grad-brand;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 32rpx;
+  font-weight: 600;
+  box-shadow: 0 8rpx 20rpx rgba(255, 111, 165, 0.35);
+}
+/* 页面底部可爱签名 */
+.foot-paw {
+  margin-top: 40rpx;
+  text-align: center;
+  font-size: 22rpx;
+  color: $text-placeholder;
 }

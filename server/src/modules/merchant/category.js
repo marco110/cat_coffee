@@ -53,6 +53,26 @@ router.post(
   })
 );
 
+/** 批量排序（必须放在 /category/:categoryId 之前，否则会被 :categoryId 匹配掉） */
+router.put(
+  '/category/sort',
+  merchantAuth,
+  wrap(async (req, res) => {
+    const list = (req.body || {}).list || [];
+    await tx(async (conn) => {
+      for (const it of list) {
+        await conn.exec('UPDATE category SET sort = ?, updated_at = ? WHERE id = ? AND store_id = ?', [
+          Number(it.sort || 0),
+          nowSql(),
+          it.id,
+          req.storeId,
+        ]);
+      }
+    });
+    return ok(res, { ok: true }, '排序已保存');
+  })
+);
+
 router.put(
   '/category/:categoryId',
   merchantAuth,
@@ -83,25 +103,6 @@ router.put(
     const status = Number((req.body || {}).status) ? 1 : 0;
     await exec('UPDATE category SET status = ?, updated_at = ? WHERE id = ?', [status, nowSql(), c.id]);
     return ok(res, { status }, status ? '已启用' : '已停用');
-  })
-);
-
-/** 批量排序 */
-router.put(
-  '/category/sort',
-  merchantAuth,
-  wrap(async (req, res) => {
-    const list = (req.body || {}).list || [];
-    await tx(async (conn) => {
-      for (const it of list) {
-        await conn.exec('UPDATE category SET sort = ? WHERE id = ? AND store_id = ?', [
-          Number(it.sort || 0),
-          it.id,
-          req.storeId,
-        ]);
-      }
-    });
-    return ok(res, { ok: true }, '排序已保存');
   })
 );
 

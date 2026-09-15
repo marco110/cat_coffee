@@ -39,13 +39,13 @@ function togglePanel() {
   right: 24rpx;
   bottom: calc(24rpx + env(safe-area-inset-bottom));
   height: 100rpx;
-  background: #3d2c1e;
+  background: $grad-brand;
   border-radius: 50rpx;
   display: flex;
   align-items: center;
   padding: 0 16rpx 0 28rpx;
   z-index: 900;
-  box-shadow: 0 8rpx 24rpx rgba(61, 44, 30, 0.24);
+  box-shadow: 0 10rpx 28rpx rgba(240, 72, 128, 0.32);
 }
 .icon-wrap {
   position: relative;
@@ -95,8 +95,9 @@ function togglePanel() {
   height: 76rpx;
   padding: 0 44rpx;
   border-radius: 38rpx;
-  background: $cat-orange;
-  color: #fff;
+  background: #fff;
+  color: $pink-dark;
+  font-weight: 600;
   display: flex;
   align-items: center;
   font-size: 30rpx;

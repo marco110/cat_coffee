@@ -1,8 +1,12 @@
 <template>
   <view class="page">
     <view class="top">
+      <ct-kitty class="top-paw" mode="paw" :size="200" color="#ffffff" opacity="0.18" />
       <view class="store-line">
-        <text class="store">{{ storeName }}</text>
+        <view class="store-name-wrap">
+          <ct-kitty mode="face" :size="60" color="#ffffff" bow-color="#ffd84d" />
+          <text class="store">{{ storeName }}</text>
+        </view>
         <view class="switch" :class="{ on: businessStatus === 1 }" @click="toggleBusiness">
           <text>{{ businessStatus === 1 ? '营业中' : '休息中' }}</text>
         </view>
@@ -78,6 +82,7 @@ import { onShow, onUnload } from '@dcloudio/uni-app';
 import { overview as apiOverview, pendingCount, todo as apiTodo, updateBusinessStatus } from '@/api/merchant';
 import { price } from '@/utils/format';
 import { useUserStore } from '@/store/user';
+import CtKitty from '@/components/ct-kitty.vue';
 
 const userStore = useUserStore();
 const overview = ref({});
@@ -138,15 +143,34 @@ onUnload(() => timer && clearInterval(timer));
   padding: 24rpx 24rpx 60rpx;
 }
 .top {
+  position: relative;
+  overflow: hidden;
   padding: 32rpx;
   border-radius: $radius-card;
-  background: linear-gradient(135deg, #7d5940, #6f4e37);
+  background: $grad-brand;
   color: #fff;
 }
+.top-paw {
+  position: absolute;
+  right: -20rpx;
+  bottom: -30rpx;
+  z-index: 0;
+}
 .store-line {
+  position: relative;
+  z-index: 1;
   display: flex;
   align-items: center;
   justify-content: space-between;
+}
+.store-name-wrap {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+}
+.kpi {
+  position: relative;
+  z-index: 1;
 }
 .store {
   font-size: 36rpx;

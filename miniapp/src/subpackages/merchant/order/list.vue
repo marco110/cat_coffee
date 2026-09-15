@@ -57,6 +57,8 @@ import { onShow, onPullDownRefresh, onReachBottom, onUnload } from '@dcloudio/un
 import { orderList, orderAction, orderPay } from '@/api/merchant';
 import { price } from '@/utils/format';
 import { useUserStore } from '@/store/user';
+import CtStatusTag from '@/components/ct-status-tag.vue';
+import CtEmpty from '@/components/ct-empty.vue';
 
 const TABS = [
   { label: '全部', value: '' },

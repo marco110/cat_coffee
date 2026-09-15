@@ -45,6 +45,7 @@ router.post(
 /** 手机号一键授权绑定（含换微信时的账号合并） */
 router.post(
   '/auth/phone',
+  customerAuth,
   wrap(async (req, res) => {
     const { code } = req.body || {};
     if (!code) throw new BizError(CODES.BAD_PARAM, '缺少手机号授权 code');

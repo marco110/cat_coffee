@@ -34,4 +34,8 @@ module.exports = {
     dir: path.resolve(__dirname, '..', '..', process.env.ADMIN_WEB_DIR || '../admin-web/dist'),
   },
   cron: process.env.ENABLE_CRON !== 'false',
+  // 门店账号（店主/店员）的默认密码，新建与重置密码都用它
+  storeUser: {
+    defaultPassword: process.env.STORE_USER_DEFAULT_PASSWORD || 'aimao2026',
+  },
 };

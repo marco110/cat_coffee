@@ -1,12 +1,14 @@
 <template>
   <view class="page">
     <view class="user-card">
+      <ct-kitty class="card-paw" mode="paw" :size="200" color="#ffffff" opacity="0.18" />
       <image class="avatar" :src="fixUrl(userInfo.avatar)" mode="aspectFill" />
       <view class="u-info">
         <text class="nickname">{{ userInfo.nickname || '微信用户' }}</text>
         <text v-if="userInfo.phone" class="phone">{{ userInfo.phone }}</text>
         <button v-else class="bind-btn" open-type="getPhoneNumber" @getphonenumber="onPhone">授权手机号</button>
       </view>
+      <ct-kitty class="card-kitty" mode="face" :size="110" color="#ffffff" bow-color="#ffd84d" />
     </view>
 
     <view class="card member" @click="go('/pages/mine/member')">
@@ -61,6 +63,7 @@ import { fixUrl } from '@/config';
 import { price } from '@/utils/format';
 import { useUserStore } from '@/store/user';
 import { ensureLogin, DEFAULT_STORE_ID } from '@/utils/auth';
+import CtKitty from '@/components/ct-kitty.vue';
 
 const userStore = useUserStore();
 const userInfo = ref({});
@@ -114,12 +117,25 @@ function goList(status) {
   padding: 24rpx 24rpx 60rpx;
 }
 .user-card {
+  position: relative;
+  overflow: hidden;
   display: flex;
   align-items: center;
   padding: 40rpx 32rpx;
   border-radius: $radius-card;
-  background: linear-gradient(135deg, #7d5940, #6f4e37);
+  background: $grad-brand;
   color: #fff;
+}
+.card-paw {
+  position: absolute;
+  right: -30rpx;
+  bottom: -40rpx;
+  z-index: 0;
+}
+.card-kitty {
+  position: relative;
+  z-index: 1;
+  margin-left: auto;
 }
 .avatar {
   width: 120rpx;

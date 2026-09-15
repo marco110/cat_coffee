@@ -76,6 +76,7 @@
           <el-switch v-model="form.status" :active-value="1" :inactive-value="0" active-text="启用" inactive-text="停用" />
         </el-form-item>
       </el-form>
+      <div v-if="!form.id" class="pwd-tip">新增账号初始密码统一为 <b>{{ DEFAULT_PASSWORD }}</b>，重置密码也会恢复为这个密码</div>
       <template #footer>
         <el-button @click="dialogVisible = false">取消</el-button>
         <el-button type="primary" @click="submit">保存</el-button>
@@ -91,6 +92,7 @@ import { Search, Plus } from '@element-plus/icons-vue';
 import { getStoreUserList, createStoreUser, updateStoreUser, resetStoreUserPassword, unlockStoreUser, deleteStoreUser, getStoreList } from '@/api';
 
 const ROLE = { OWNER: '店主', STAFF: '店员' };
+const DEFAULT_PASSWORD = 'aimao2026';
 
 const list = ref([]);
 const stores = ref([]);
@@ -137,7 +139,7 @@ async function submit() {
 }
 
 async function resetPwd(row) {
-  await ElMessageBox.confirm(`确认重置「${row.realName}」的密码？`, '重置密码', { type: 'warning' });
+  await ElMessageBox.confirm(`确认将「${row.realName}」的密码重置为 ${DEFAULT_PASSWORD}？`, '重置密码', { type: 'warning' });
   const res = await resetStoreUserPassword(row.id);
   ElMessageBox.alert(`账号：${res.phone}<br/>新密码：${res.initPassword}`, '重置成功', { dangerouslyUseHTMLString: true });
   load();
@@ -167,5 +169,13 @@ onMounted(async () => {
 .muted {
   color: var(--cc-text-secondary);
   font-size: 12px;
+}
+.pwd-tip {
+  color: var(--cc-text-secondary);
+  font-size: 12px;
+  background: #fff7e6;
+  border: 1px solid #ffe0a3;
+  border-radius: 6px;
+  padding: 8px 10px;
 }
 </style>

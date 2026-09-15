@@ -1,9 +1,12 @@
 <template>
   <view class="page">
+    <ct-kitty class="bg-paw" mode="paw" :size="320" color="#ffffff" opacity="0.16" />
     <view class="brand">
-      <text class="logo">🐾</text>
+      <view class="avatar">
+        <ct-kitty mode="face" :size="110" color="#ff6fa5" bow-color="#ef3d6b" />
+      </view>
       <text class="name">爱猫咖啡 · 店主端</text>
-      <text class="sub">请使用超管开通的账号登录</text>
+      <text class="sub">🎀 请使用超管开通的账号登录 🐾</text>
     </view>
 
     <view class="form">
@@ -25,6 +28,7 @@
 import { ref } from 'vue';
 import { merchantLogin } from '@/api/merchant';
 import { useUserStore } from '@/store/user';
+import CtKitty from '@/components/ct-kitty.vue';
 
 const userStore = useUserStore();
 const form = ref({ phone: '', password: '' });
@@ -49,16 +53,37 @@ async function submit() {
 
 <style lang="scss" scoped>
 .page {
+  position: relative;
   min-height: 100vh;
   padding: 0 60rpx;
-  background: linear-gradient(180deg, #6f4e37 0%, #6f4e37 320rpx, #f5efe6 320rpx);
+  overflow: hidden;
+  background: linear-gradient(180deg, #ff8fb8 0%, #ff6fa5 300rpx, $bg-page 300rpx);
+}
+.bg-paw {
+  position: absolute;
+  right: -40rpx;
+  top: 40rpx;
+  z-index: 0;
 }
 .brand {
-  padding: 100rpx 0 60rpx;
+  position: relative;
+  z-index: 1;
+  padding: 80rpx 0 60rpx;
   display: flex;
   flex-direction: column;
   align-items: center;
   color: #fff;
+}
+.avatar {
+  width: 180rpx;
+  height: 180rpx;
+  border-radius: 50%;
+  background: #fff;
+  border: 4rpx dashed rgba(255, 255, 255, 0.85);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 8rpx 24rpx rgba(240, 72, 128, 0.25);
 }
 .logo {
   font-size: 90rpx;
@@ -74,10 +99,12 @@ async function submit() {
   opacity: 0.8;
 }
 .form {
+  position: relative;
+  z-index: 1;
   background: #fff;
   border-radius: 24rpx;
   padding: 48rpx 40rpx;
-  box-shadow: $shadow-card;
+  box-shadow: $shadow-pop;
 }
 .field {
   margin-bottom: 32rpx;

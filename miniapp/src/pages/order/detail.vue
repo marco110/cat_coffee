@@ -92,6 +92,7 @@ import { fixUrl } from '@/config';
 import { price } from '@/utils/format';
 import { useCartStore } from '@/store/cart';
 import { useUserStore } from '@/store/user';
+import CtStatusTag from '@/components/ct-status-tag.vue';
 
 const cart = useCartStore();
 const userStore = useUserStore();
@@ -177,7 +178,7 @@ function callStore() {
 .status-card {
   padding: 36rpx;
   border-radius: $radius-card;
-  background: linear-gradient(135deg, #7d5940, #6f4e37);
+  background: $grad-brand;
   color: #fff;
 }
 .s-main {
@@ -213,7 +214,7 @@ function callStore() {
 .modify-notice {
   margin-top: 20rpx;
   padding: 20rpx 24rpx;
-  background: rgba(232, 168, 124, 0.16);
+  background: rgba(255, 169, 200, 0.22);
   border-radius: 12rpx;
   color: $cat-orange;
   font-size: 26rpx;

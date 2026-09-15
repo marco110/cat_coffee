@@ -2,6 +2,7 @@
   <view class="page">
     <view class="hero">
       <image class="bg" :src="fixUrl(store.cover)" mode="aspectFill" />
+      <ct-kitty class="hero-paw" mode="paw" :size="180" color="#ffffff" opacity="0.18" />
       <view class="hero-mask">
         <view class="store-name">{{ store.name || '爱猫咖啡' }}</view>
         <view class="status-row">
@@ -37,7 +38,7 @@
 
     <view class="section">
       <view class="section-title">
-        <text>今日推荐</text>
+        <text>🐾 今日推荐</text>
         <text class="more" @click="goMenu">查看菜单 ></text>
       </view>
       <scroll-view class="recommend" scroll-x>
@@ -76,6 +77,7 @@ import { fixUrl } from '@/config';
 import { price } from '@/utils/format';
 import { useUserStore } from '@/store/user';
 import { ensureLogin, DEFAULT_STORE_ID } from '@/utils/auth';
+import CtKitty from '@/components/ct-kitty.vue';
 
 const userStore = useUserStore();
 const store = ref({ businessHours: '', businessStatus: 0 });
@@ -129,8 +131,9 @@ function goOrder(type) {
 function goMenu() {
   uni.navigateTo({ url: '/pages/order/menu' });
 }
-function openDish() {
-  uni.navigateTo({ url: '/pages/order/menu' });
+function openDish(dish) {
+  const sid = userStore.storeId || String(DEFAULT_STORE_ID);
+  uni.navigateTo({ url: `/pages/order/dish?id=${dish.id}&storeId=${sid}` });
 }
 function scan() {
   uni.scanCode({
@@ -177,11 +180,17 @@ onPullDownRefresh(async () => {
   height: 300rpx;
   border-radius: $radius-card;
   overflow: hidden;
-  background: linear-gradient(135deg, #a0724f, #6f4e37);
+  background: $grad-brand;
 }
 .bg {
   width: 100%;
   height: 100%;
+}
+.hero-paw {
+  position: absolute;
+  right: 16rpx;
+  bottom: 8rpx;
+  z-index: 1;
 }
 .hero-mask {
   position: absolute;

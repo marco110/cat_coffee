@@ -20,12 +20,12 @@
 
     <view class="card block">
       <view class="bt">经营设置</view>
-      <view class="row"><text class="label">营业状态</text><switch :checked="store.businessStatus === 1" color="#6F4E37" @change="onBusiness" /></view>
-      <view class="row"><text class="label">自动接单</text><switch :checked="c.autoAcceptOrder" color="#6F4E37" @change="(e) => (c.autoAcceptOrder = e.detail.value)" /></view>
-      <view class="row"><text class="label">展示销量</text><switch :checked="c.showSales" color="#6F4E37" @change="(e) => (c.showSales = e.detail.value)" /></view>
-      <view class="row"><text class="label">展示售罄菜品</text><switch :checked="c.showSoldOutDish" color="#6F4E37" @change="(e) => (c.showSoldOutDish = e.detail.value)" /></view>
-      <view class="row"><text class="label">会员功能</text><switch :checked="c.memberEnabled" color="#6F4E37" @change="(e) => (c.memberEnabled = e.detail.value)" /></view>
-      <view class="row"><text class="label">积分功能</text><switch :checked="c.pointsEnabled" color="#6F4E37" @change="(e) => (c.pointsEnabled = e.detail.value)" /></view>
+      <view class="row"><text class="label">营业状态</text><switch :checked="store.businessStatus === 1" color="#FF6FA5" @change="onBusiness" /></view>
+      <view class="row"><text class="label">自动接单</text><switch :checked="c.autoAcceptOrder" color="#FF6FA5" @change="(e) => (c.autoAcceptOrder = e.detail.value)" /></view>
+      <view class="row"><text class="label">展示销量</text><switch :checked="c.showSales" color="#FF6FA5" @change="(e) => (c.showSales = e.detail.value)" /></view>
+      <view class="row"><text class="label">展示售罄菜品</text><switch :checked="c.showSoldOutDish" color="#FF6FA5" @change="(e) => (c.showSoldOutDish = e.detail.value)" /></view>
+      <view class="row"><text class="label">会员功能</text><switch :checked="c.memberEnabled" color="#FF6FA5" @change="(e) => (c.memberEnabled = e.detail.value)" /></view>
+      <view class="row"><text class="label">积分功能</text><switch :checked="c.pointsEnabled" color="#FF6FA5" @change="(e) => (c.pointsEnabled = e.detail.value)" /></view>
       <view class="row"><text class="label">1 元 = N 积分</text><input v-model="c.pointsRate" class="input" type="digit" placeholder-class="ph" /></view>
       <view class="row"><text class="label">1 元 = N 成长值</text><input v-model="c.growthRate" class="input" type="digit" placeholder-class="ph" /></view>
       <view class="row"><text class="label">多少积分 = 1 元</text><input v-model="c.pointsDeductRatio" class="input" type="number" placeholder-class="ph" /></view>
@@ -57,6 +57,7 @@
 import { ref, reactive, onMounted } from 'vue';
 import { storeInfo, updateStoreInfo, updateStoreConfig, updateBusinessStatus, storeUserList, createStoreUser, resetStoreUserPassword } from '@/api/merchant';
 import { useUserStore } from '@/store/user';
+import CtEmpty from '@/components/ct-empty.vue';
 
 const ROLE = { OWNER: '店主', STAFF: '店员' };
 const userStore = useUserStore();

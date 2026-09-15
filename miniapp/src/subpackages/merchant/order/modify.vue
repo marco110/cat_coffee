@@ -48,6 +48,7 @@ import { onLoad } from '@dcloudio/uni-app';
 import { orderDetail, orderModify, dishList } from '@/api/merchant';
 import { getDish } from '@/api/customer';
 import { price } from '@/utils/format';
+import CtQty from '@/components/ct-qty.vue';
 
 const orderId = ref('');
 const items = ref([]);

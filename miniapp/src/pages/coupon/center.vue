@@ -26,6 +26,7 @@ import { getCouponCenter, claimCoupon } from '@/api/customer';
 import { price, couponValue, dateText } from '@/utils/format';
 import { useUserStore } from '@/store/user';
 import { DEFAULT_STORE_ID } from '@/utils/auth';
+import CtEmpty from '@/components/ct-empty.vue';
 
 const userStore = useUserStore();
 const storeId = userStore.storeId || String(DEFAULT_STORE_ID);

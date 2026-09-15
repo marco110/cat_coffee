@@ -63,6 +63,7 @@
 import { ref, computed, watch } from 'vue';
 import { fixUrl } from '@/config';
 import { price } from '@/utils/format';
+import CtQty from '@/components/ct-qty.vue';
 
 const props = defineProps({ dish: { type: Object, default: () => ({}) }, visible: Boolean });
 const emit = defineEmits(['close', 'confirm']);
