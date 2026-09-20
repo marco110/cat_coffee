@@ -93,7 +93,27 @@
       </view>
     </view>
 
-    <ct-cart-bar :count="cart.count" :amount="cart.goodsAmount" @submit="goConfirm" />
+    <ct-cart-bar :count="cart.count" :amount="cart.goodsAmount" @submit="goConfirm" @toggle="panelVisible = !panelVisible" />
+
+    <!-- 点单明细：点击购物车图标展开 -->
+    <view v-if="panelVisible && cart.count > 0" class="cart-mask" @click="panelVisible = false">
+      <view class="cart-panel" @click.stop>
+        <view class="cart-head">
+          <text>点单明细</text>
+          <text class="clear" @click="cart.clear()">清空</text>
+        </view>
+        <scroll-view class="cart-list" scroll-y>
+          <view v-for="it in cart.items" :key="it.key" class="cart-item">
+            <view class="ci-info">
+              <text class="ci-name">{{ it.name }}</text>
+              <text v-if="it.specText" class="ci-spec">{{ it.specText }}</text>
+            </view>
+            <text class="ci-price">¥{{ price((it.unitPrice + (it.addonAmount || 0)) * it.quantity) }}</text>
+            <ct-qty :value="it.quantity" @change="(v) => cart.setQuantity(it.key, v)" />
+          </view>
+        </scroll-view>
+      </view>
+    </view>
   </view>
 </template>
 
@@ -121,6 +141,7 @@ const selected = ref({}); // groupId -> [itemId]
 const selectedAddons = ref([]);
 const remark = ref('');
 const quantity = ref(1);
+const panelVisible = ref(false);
 
 const soldOut = computed(() => Number(dish.value.soldOut) === 1 || Number(dish.value.status) === 0);
 
@@ -457,5 +478,72 @@ function goConfirm() {
   &.disabled {
     background: #d9c3cd;
   }
+}
+/* 点单明细面板 */
+.cart-mask {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  z-index: 950;
+  display: flex;
+  align-items: flex-end;
+}
+.cart-panel {
+  width: 100%;
+  max-height: 60vh;
+  background: #fff;
+  border-radius: 24rpx 24rpx 0 0;
+  display: flex;
+  flex-direction: column;
+}
+.cart-head {
+  padding: 24rpx 28rpx;
+  display: flex;
+  justify-content: space-between;
+  border-bottom: 1rpx solid $border-color;
+  font-size: 30rpx;
+  font-weight: 600;
+  .clear {
+    color: $text-secondary;
+    font-size: 26rpx;
+    font-weight: 400;
+  }
+}
+.cart-list {
+  max-height: 50vh;
+  padding: 0 28rpx;
+  box-sizing: border-box;
+}
+.cart-item {
+  display: flex;
+  align-items: center;
+  padding: 24rpx 0;
+  border-bottom: 1rpx dashed $border-color;
+}
+.ci-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+.ci-name {
+  font-size: 28rpx;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.ci-spec {
+  margin-top: 6rpx;
+  font-size: 22rpx;
+  color: $text-secondary;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.ci-price {
+  flex-shrink: 0;
+  margin: 0 24rpx;
+  color: $coffee-brown;
+  font-weight: 600;
 }
 </style>

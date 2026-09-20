@@ -2,15 +2,8 @@
   <view class="page">
     <view class="topbar">
       <view class="pick">
-        <view class="seg">
-          <text class="seg-item" :class="{ on: orderType === 'DINE_IN' }" @click="switchType('DINE_IN')">堂食</text>
-          <text class="seg-item" :class="{ on: orderType === 'TAKEAWAY' }" @click="switchType('TAKEAWAY')">打包</text>
-        </view>
-        <view v-if="orderType === 'DINE_IN'" class="table-pick" @click="showTables = true">
-          <text>{{ tableNo ? `桌号 ${tableNo}` : '请选择桌号' }}</text>
-          <text class="arrow">▾</text>
-        </view>
-        <text v-else class="takeaway-tip">下单后凭取餐码取餐</text>
+        <text class="mode-tag">门店自取</text>
+        <text class="takeaway-tip">下单后凭取餐码取餐</text>
       </view>
       <view class="search" @click="searching = true">
         <input v-model="keyword" class="search-input" placeholder="搜索菜品" placeholder-class="ph" confirm-type="search" @confirm="onSearch" />
@@ -78,38 +71,19 @@
       </view>
     </view>
 
-    <!-- 桌号选择 -->
-    <view v-if="showTables" class="cart-mask" @click="showTables = false">
-      <view class="table-panel" @click.stop>
-        <view class="cart-head"><text>选择桌号</text></view>
-        <scroll-view class="cart-list" scroll-y>
-          <view v-for="g in tableGroups" :key="g.area" class="tg">
-            <view class="tg-title">{{ g.area }}</view>
-            <view class="tg-tables">
-              <text
-                v-for="t in g.tables"
-                :key="t.id"
-                class="t-item"
-                :class="{ on: String(tableId) === String(t.id) }"
-                @click="pickTable(t)"
-              >{{ t.tableNo }}</text>
-            </view>
-          </view>
-        </scroll-view>
-      </view>
-    </view>
+
   </view>
 </template>
 
 <script setup>
 import { ref, computed, onMounted } from 'vue';
 import { onLoad, onShow, onShareAppMessage, onShareTimeline } from '@dcloudio/uni-app';
-import { getMenu, getTables, searchDish, getStore } from '@/api/customer';
+import { getMenu, searchDish, getStore } from '@/api/customer';
 import { price } from '@/utils/format';
 import { fixUrl } from '@/config';
 import { useCartStore } from '@/store/cart';
 import { useUserStore } from '@/store/user';
-import { DEFAULT_STORE_ID, ensureLogin } from '@/utils/auth';
+import { DEFAULT_STORE_ID, ensureLogin, ensurePhone } from '@/utils/auth';
 import CtDishItem from '@/components/ct-dish-item.vue';
 import CtQty from '@/components/ct-qty.vue';
 import CtCartBar from '@/components/ct-cart-bar.vue';
@@ -126,37 +100,17 @@ const showSales = ref(true);
 const keyword = ref('');
 const searching = ref(false);
 
-const orderType = ref('TAKEAWAY');
-const tableId = ref('');
-const tableNo = ref('');
-const tableGroups = ref([]);
-const showTables = ref(false);
-
 const panelVisible = ref(false);
 
 onLoad(async (opt) => {
   await ensureLogin();
   // 从分享链接进来时以链接里的门店为准，好友可能先于自己到过别家门店
   storeId.value = (opt && opt.storeId) || userStore.storeId || String(DEFAULT_STORE_ID);
-  userStore.setStore({ storeId: storeId.value });
+  userStore.setStore({ storeId: storeId.value, orderType: 'TAKEAWAY' });
   cart.bindStore(storeId.value);
-  if (opt && opt.orderType) orderType.value = opt.orderType;
-  else orderType.value = userStore.orderType || 'TAKEAWAY';
-  if (opt && opt.tableId) {
-    // 分享带桌号：直接定位到该桌，同桌扫码后无需再选
-    tableId.value = opt.tableId;
-    tableNo.value = decodeURIComponent(opt.tableNo || '');
-    userStore.setStore({ tableId: tableId.value, tableNo: tableNo.value, orderType: 'DINE_IN' });
-    orderType.value = 'DINE_IN';
-  } else if (userStore.tableId) {
-    tableId.value = userStore.tableId;
-    tableNo.value = userStore.tableNo || '';
-    if (tableId.value !== '0') orderType.value = 'DINE_IN';
-  }
   // 让右上角「转发给朋友 / 分享到朋友圈」可用
   uni.showShareMenu({ menus: ['shareAppMessage', 'shareTimeline'] });
   await loadMenu();
-  await loadTables();
   await loadStore();
 });
 
@@ -168,27 +122,13 @@ onShow(() => {
     storeId.value = sid;
     cart.bindStore(sid);
     loadMenu();
-    loadTables();
     loadStore();
   }
-  if (userStore.orderType) orderType.value = userStore.orderType;
-  tableId.value = userStore.tableId || '';
-  tableNo.value = userStore.tableNo || '';
 });
 
-/** 分享内容：门店名 + 点餐方式（堂食带桌号），封面优先门店图 */
-const shareTitle = computed(() => {
-  const name = store.value.name || '爱猫咖啡';
-  if (orderType.value === 'DINE_IN' && tableNo.value) return `${name} · ${tableNo.value}号桌，一起点单吧🐾`;
-  return `${name} · 在线点单，到店即取🐾`;
-});
-const shareQuery = computed(() => {
-  const q = [`storeId=${storeId.value}`, `orderType=${orderType.value}`];
-  if (orderType.value === 'DINE_IN' && tableId.value && tableId.value !== '0') {
-    q.push(`tableId=${tableId.value}`, `tableNo=${encodeURIComponent(tableNo.value || '')}`);
-  }
-  return q.join('&');
-});
+/** 分享内容：门店名 + 到店自取，封面优先门店图 */
+const shareTitle = computed(() => `${store.value.name || '爱猫咖啡'} · 在线点单，到店即取🐾`);
+const shareQuery = computed(() => `storeId=${storeId.value}`);
 /** 分享封面：门店封面，兜底用第一道菜的封面 */
 const shareImage = computed(() => {
   if (store.value.cover) return fixUrl(store.value.cover);
@@ -243,17 +183,6 @@ function onScroll(e) {
   const h = e.detail.scrollTop;
   if (h < 20) currentCat.value = 0;
 }
-function switchType(type) {
-  orderType.value = type;
-  userStore.setStore({ orderType: type });
-  if (type === 'DINE_IN' && !tableId.value) showTables.value = true;
-}
-function pickTable(t) {
-  tableId.value = t.id;
-  tableNo.value = t.tableNo;
-  userStore.setStore({ tableId: t.id, tableNo: t.tableNo, orderType: 'DINE_IN' });
-  showTables.value = false;
-}
 function qtyOf(dishId) {
   return cart.items.filter((i) => i.dishId === String(dishId)).reduce((s, i) => s + i.quantity, 0);
 }
@@ -270,29 +199,12 @@ function openDish(dish) {
   if (Number(dish.soldOut) === 1) return uni.showToast({ title: '今日已售罄', icon: 'none' });
   uni.navigateTo({ url: `/pages/order/dish?id=${dish.id}&storeId=${storeId.value}` });
 }
-function goConfirm() {
+async function goConfirm() {
   if (!cart.count) return;
-  if (orderType.value === 'DINE_IN' && !tableId.value) {
-    showTables.value = true;
-    uni.showToast({ title: '请先选择桌号', icon: 'none' });
-    return;
-  }
-  if (orderType.value === 'TAKEAWAY' && !userStore.userInfo?.phone) {
-    uni.showModal({
-      title: '需授权手机号',
-      content: '打包订单需要绑定手机号以便联系，是否立即授权？',
-      success: (r) => {
-        if (!r.confirm) return;
-        // 「我的」是 tabBar 页，用 switchTab + 内存标记传递引导意图
-        userStore.setPendingBind(true);
-        uni.switchTab({ url: '/pages/mine/index' });
-      },
-    });
-    return;
-  }
-  uni.navigateTo({
-    url: `/pages/order/confirm?storeId=${storeId.value}&orderType=${orderType.value}&tableId=${tableId.value}&tableNo=${encodeURIComponent(tableNo.value)}`,
-  });
+  // 手机号未绑定时后端会拒绝下单（BizError: 请先授权手机号），这里先校验并引导绑定
+  const ok = await ensurePhone();
+  if (!ok) return;
+  uni.navigateTo({ url: `/pages/order/confirm?storeId=${storeId.value}&orderType=TAKEAWAY` });
 }
 </script>
 
@@ -311,32 +223,13 @@ function goConfirm() {
   display: flex;
   align-items: center;
 }
-.seg {
-  display: flex;
-  background: rgba(255, 255, 255, 0.18);
-  border-radius: 30rpx;
-  padding: 4rpx;
-}
-.seg-item {
-  padding: 10rpx 28rpx;
+.mode-tag {
+  padding: 8rpx 24rpx;
   border-radius: 26rpx;
-  color: #fff;
+  background: #fff;
+  color: $coffee-brown;
   font-size: 26rpx;
-  &.on {
-    background: #fff;
-    color: $coffee-brown;
-    font-weight: 600;
-  }
-}
-.table-pick {
-  margin-left: 20rpx;
-  color: #fff;
-  font-size: 26rpx;
-  display: flex;
-  align-items: center;
-  .arrow {
-    margin-left: 8rpx;
-  }
+  font-weight: 600;
 }
 .takeaway-tip {
   margin-left: 20rpx;
@@ -427,8 +320,7 @@ function goConfirm() {
   display: flex;
   align-items: flex-end;
 }
-.cart-panel,
-.table-panel {
+.cart-panel {
   width: 100%;
   max-height: 60vh;
   background: #fff;
@@ -452,6 +344,7 @@ function goConfirm() {
 .cart-list {
   max-height: 50vh;
   padding: 0 28rpx;
+  box-sizing: border-box;
 }
 .cart-item {
   display: flex;
@@ -459,44 +352,31 @@ function goConfirm() {
   padding: 24rpx 0;
   border-bottom: 1rpx dashed $border-color;
 }
+/* min-width: 0 让菜名区域可压缩，避免长菜名 + 规格把整行撑出屏幕 */
 .ci-info {
   flex: 1;
+  min-width: 0;
   display: flex;
   flex-direction: column;
 }
 .ci-name {
   font-size: 28rpx;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .ci-spec {
   margin-top: 6rpx;
   font-size: 22rpx;
   color: $text-secondary;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .ci-price {
+  flex-shrink: 0;
   margin: 0 24rpx;
   color: $coffee-brown;
   font-weight: 600;
-}
-.tg-title {
-  padding: 20rpx 0 8rpx;
-  font-size: 26rpx;
-  color: $text-secondary;
-}
-.tg-tables {
-  display: flex;
-  flex-wrap: wrap;
-}
-.t-item {
-  width: 140rpx;
-  text-align: center;
-  padding: 18rpx 0;
-  margin: 0 16rpx 16rpx 0;
-  background: $cream-white;
-  border-radius: 12rpx;
-  font-size: 26rpx;
-  &.on {
-    background: $coffee-brown;
-    color: #fff;
-  }
 }
 </style>

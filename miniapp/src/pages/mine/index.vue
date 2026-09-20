@@ -96,11 +96,40 @@ async function load() {
   }
 }
 
+/** 微信一键授权手机号 */
 async function onPhone(e) {
-  const code = e.detail.code;
-  if (!code) return uni.showToast({ title: '已取消授权', icon: 'none' });
+  const detail = e.detail || {};
+  if (detail.code) return doBind({ code: detail.code });
+  // 没拿到 code：区分「用户取消」和「授权失败（如未开通手机号快速验证权限）」
+  const errMsg = String(detail.errMsg || '');
+  if (/cancel|deny/i.test(errMsg)) return uni.showToast({ title: '已取消授权', icon: 'none' });
+  uni.showModal({
+    title: '手机号授权失败',
+    content: '暂无法获取微信手机号，可改为手动输入手机号绑定',
+    confirmText: '手动输入',
+    cancelText: '稍后再说',
+    success: (r) => r.confirm && inputPhone(),
+  });
+}
+
+/** 兜底：手动输入手机号绑定 */
+function inputPhone() {
+  uni.showModal({
+    title: '绑定手机号',
+    editable: true,
+    placeholderText: '请输入 11 位手机号',
+    success: async (r) => {
+      if (!r.confirm) return;
+      const phone = String(r.content || '').trim();
+      if (!/^1[3-9]\d{9}$/.test(phone)) return uni.showToast({ title: '手机号格式不正确', icon: 'none' });
+      await doBind({ phone });
+    },
+  });
+}
+
+async function doBind(payload) {
   try {
-    await bindPhone({ code });
+    await bindPhone(payload);
     uni.showToast({ title: '绑定成功', icon: 'none' });
     await load();
   } catch (err) {

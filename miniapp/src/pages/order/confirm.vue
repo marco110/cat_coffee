@@ -103,6 +103,7 @@ import { fixUrl } from '@/config';
 import { price, discountText, dateText } from '@/utils/format';
 import { useCartStore } from '@/store/cart';
 import { useUserStore } from '@/store/user';
+import { ensurePhone } from '@/utils/auth';
 import CtQty from '@/components/ct-qty.vue';
 
 const cart = useCartStore();
@@ -179,6 +180,9 @@ function pickCoupon(c) {
 async function submit() {
   if (submitting.value) return;
   if (!cart.count) return uni.showToast({ title: '购物车为空', icon: 'none' });
+  // 未绑定手机号时后端会拒绝下单，这里提前拦截并引导绑定
+  const ok = await ensurePhone();
+  if (!ok) return;
   submitting.value = true;
   try {
     const res = await createOrder({

@@ -26,6 +26,7 @@ function onMinus() {
 .qty {
   display: flex;
   align-items: center;
+  flex-shrink: 0;
   .btn {
     width: 44rpx;
     height: 44rpx;

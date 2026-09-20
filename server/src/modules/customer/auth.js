@@ -36,7 +36,10 @@ router.post(
         id: String(user.id),
         nickname: user.nickname || '',
         avatar: user.avatar || '',
-        phone: user.phone ? maskPhone(user.phone) : null,
+        // 注意：这里是真实号码（用于判断是否需要绑定），脱敏串另外给 phoneMask，
+        // 前端若拿脱敏串判断会误认为已绑定，导致下单时报「请先授权手机号」
+        phone: user.phone || null,
+        phoneMask: user.phone ? maskPhone(user.phone) : null,
       },
     });
   })
@@ -47,15 +50,22 @@ router.post(
   '/auth/phone',
   customerAuth,
   wrap(async (req, res) => {
-    const { code } = req.body || {};
-    if (!code) throw new BizError(CODES.BAD_PARAM, '缺少手机号授权 code');
+    const { code, phone: inputPhone } = req.body || {};
     const me = await one('SELECT * FROM user WHERE id = ?', [req.auth.sub]);
     if (!me) throw new BizError(CODES.UNAUTHORIZED, '登录已失效');
     if (me.phone) {
       return ok(res, { phone: maskPhone(me.phone), user: formatUser(me) }, '已绑定');
     }
 
-    const phone = await wechat.getPhoneNumber(code);
+    // 优先用微信手机号授权 code；拿不到 code 时允许手动输入手机号（/^1[3-9]\d{9}$/）
+    let phone = '';
+    if (code) {
+      phone = await wechat.getPhoneNumber(code);
+    } else if (/^1[3-9]\d{9}$/.test(String(inputPhone || '').trim())) {
+      phone = String(inputPhone).trim();
+    } else {
+      throw new BizError(CODES.BAD_PARAM, '缺少手机号授权 code');
+    }
     const exist = await one('SELECT * FROM user WHERE phone = ? AND id <> ?', [phone, me.id]);
 
     if (exist) await mergeUsers(me.id, exist.id);

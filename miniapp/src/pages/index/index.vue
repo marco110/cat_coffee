@@ -19,20 +19,15 @@
     </view>
 
     <view class="actions">
-      <view class="action" @click="goOrder('DINE_IN')">
-        <text class="emoji">🪑</text>
-        <text class="t">堂食点餐</text>
-        <text class="s">选择桌号下单</text>
-      </view>
       <view class="action" @click="goOrder('TAKEAWAY')">
         <text class="emoji">🥤</text>
-        <text class="t">打包带走</text>
-        <text class="s">取餐码叫号</text>
+        <text class="t">门店自取</text>
+        <text class="s">在线点单 到店取餐</text>
       </view>
-      <view class="action" @click="scan">
-        <text class="emoji">📷</text>
-        <text class="t">扫码点餐</text>
-        <text class="s">扫描桌面二维码</text>
+      <view class="action" @click="noDelivery">
+        <text class="emoji">🛵</text>
+        <text class="t">外卖</text>
+        <text class="s">敬请期待</text>
       </view>
     </view>
 
@@ -136,15 +131,9 @@ function openDish(dish) {
   const sid = userStore.storeId || String(DEFAULT_STORE_ID);
   uni.navigateTo({ url: `/pages/order/dish?id=${dish.id}&storeId=${sid}` });
 }
-function scan() {
-  uni.scanCode({
-    success: async (res) => {
-      const scene = res.result;
-      userStore.setScene(scene);
-      await loadStore();
-      uni.showToast({ title: '扫码成功', icon: 'none' });
-    },
-  });
+/** 外卖暂未开通 */
+function noDelivery() {
+  uni.showToast({ title: '您所在地点暂不支持外卖', icon: 'none' });
 }
 function callPhone() {
   if (store.value.phone) uni.makePhoneCall({ phoneNumber: store.value.phone });
@@ -247,7 +236,7 @@ onPullDownRefresh(async () => {
   justify-content: space-between;
 }
 .action {
-  width: 31%;
+  width: 48%;
   background: #fff;
   border-radius: $radius-card;
   padding: 28rpx 0;
