@@ -39,7 +39,7 @@
     <view class="section">
       <view class="section-title">
         <text>🐾 今日推荐</text>
-        <text class="more" @click="goMenu">查看菜单 ></text>
+        <text class="more" @click="goMenu">查看菜单</text>
       </view>
       <scroll-view class="recommend" scroll-x>
         <view v-for="d in recommends" :key="d.id" class="rec-card" @click="openDish(d)">
@@ -126,10 +126,11 @@ async function loadBanners() {
 
 function goOrder(type) {
   userStore.setStore({ orderType: type });
-  uni.navigateTo({ url: '/pages/order/menu' });
+  // 点餐页是 tabBar 页，只能用 switchTab 跳转
+  uni.switchTab({ url: '/pages/order/menu' });
 }
 function goMenu() {
-  uni.navigateTo({ url: '/pages/order/menu' });
+  uni.switchTab({ url: '/pages/order/menu' });
 }
 function openDish(dish) {
   const sid = userStore.storeId || String(DEFAULT_STORE_ID);

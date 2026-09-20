@@ -70,12 +70,16 @@ const userInfo = ref({});
 const member = ref({});
 const storeId = computed(() => userStore.storeId || String(DEFAULT_STORE_ID));
 
-onLoad(async (opt) => {
+onLoad(async () => {
   await ensureLogin();
-  if (opt.bind === '1') uni.showToast({ title: '请授权手机号', icon: 'none' });
 });
 onShow(async () => {
   await load();
+  // 从点餐页跳转过来授权手机号（tabBar 跳转不带参数，用标记传递）
+  if (userStore.pendingBind) {
+    userStore.setPendingBind(false);
+    if (!userInfo.value.phone) uni.showToast({ title: '请点击上方「授权手机号」', icon: 'none' });
+  }
 });
 
 async function load() {

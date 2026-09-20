@@ -99,7 +99,7 @@
 
 <script setup>
 import { ref, computed } from 'vue';
-import { onLoad } from '@dcloudio/uni-app';
+import { onLoad, onShareAppMessage, onShareTimeline } from '@dcloudio/uni-app';
 import { getDish } from '@/api/customer';
 import { fixUrl } from '@/config';
 import { price } from '@/utils/format';
@@ -113,6 +113,7 @@ const cart = useCartStore();
 const userStore = useUserStore();
 
 const storeId = ref('');
+const dishId = ref('');
 const dish = ref({});
 const specGroups = ref([]);
 const addons = ref([]);
@@ -150,6 +151,25 @@ const unitTotal = computed(() => {
   return Math.round(total * 100) / 100;
 });
 
+/** 分享内容：菜品名 + 价格，封面用菜品图 */
+const shareTitle = computed(() => {
+  const name = dish.value.name || '爱猫咖啡';
+  return dish.value.price ? `${name} · 点我一起喝一杯🐾` : `${name} · 点我一起喝一杯🐾`;
+});
+const shareQuery = computed(() => `id=${dishId.value}&storeId=${storeId.value}`);
+const shareImage = computed(() => fixUrl(dish.value.cover));
+
+onShareAppMessage(() => ({
+  title: shareTitle.value,
+  path: `/pages/order/dish?${shareQuery.value}`,
+  imageUrl: shareImage.value,
+}));
+onShareTimeline(() => ({
+  title: shareTitle.value,
+  query: shareQuery.value,
+  imageUrl: shareImage.value,
+}));
+
 const specText = computed(() => {
   const names = [];
   specGroups.value.forEach((g) => {
@@ -163,7 +183,11 @@ const specText = computed(() => {
 
 onLoad(async (opt) => {
   storeId.value = opt.storeId || userStore.storeId || String(DEFAULT_STORE_ID);
+  dishId.value = opt.id || '';
+  userStore.setStore({ storeId: storeId.value });
   cart.bindStore(storeId.value);
+  // 让右上角「转发给朋友 / 分享到朋友圈」可用
+  uni.showShareMenu({ menus: ['shareAppMessage', 'shareTimeline'] });
   const detail = await getDish(opt.id);
   dish.value = detail;
   specGroups.value = detail.specGroups || [];

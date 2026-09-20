@@ -53,7 +53,7 @@
       <view class="imgs">
         <view v-for="(img, i) in form.images" :key="i" class="img-wrap">
           <image class="img" :src="fixUrl(img)" mode="aspectFill" @click="previewIntro(i)" />
-          <text class="del" @click="removeIntro(i)">×</text>
+          <view class="img-del" @click="removeIntro(i)">×</view>
         </view>
         <view v-if="form.images.length < 9" class="img-wrap add" @click="chooseIntroImages">+</view>
       </view>
@@ -358,18 +358,20 @@ async function save() {
   align-items: center;
   justify-content: center;
 }
-.del {
+.img-del {
   position: absolute;
-  right: -10rpx;
-  top: -10rpx;
+  right: -8rpx;
+  top: -8rpx;
   width: 40rpx;
   height: 40rpx;
   border-radius: 50%;
   background: $danger;
   color: #fff;
   font-size: 28rpx;
-  text-align: center;
-  line-height: 36rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2rpx 6rpx rgba(0, 0, 0, 0.2);
   z-index: 2;
 }
 .textarea {
@@ -411,18 +413,6 @@ async function save() {
   padding: 20rpx 24rpx calc(20rpx + env(safe-area-inset-bottom));
   background: #fff;
   display: flex;
-}
-.del {
-  width: 240rpx;
-  height: 92rpx;
-  border-radius: $radius-button;
-  border: 1rpx solid $danger;
-  color: $danger;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 30rpx;
-  margin-right: 20rpx;
 }
 .save {
   flex: 1;

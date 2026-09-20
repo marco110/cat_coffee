@@ -14,6 +14,8 @@ export const useUserStore = defineStore('user', {
     tableId: '',
     tableNo: '',
     orderType: 'TAKEAWAY',
+    // 待引导绑定手机号（tabBar 跳转无法带参，用内存标记传递）
+    pendingBind: false,
     merchantToken: '',
     merchantInfo: null,
     merchantStore: null,
@@ -55,6 +57,9 @@ export const useUserStore = defineStore('user', {
       if (tableNo !== undefined) this.tableNo = tableNo || '';
       if (orderType) this.orderType = orderType;
       this.persist();
+    },
+    setPendingBind(v) {
+      this.pendingBind = !!v;
     },
     setMerchant({ token, user, store }) {
       this.merchantToken = token || '';

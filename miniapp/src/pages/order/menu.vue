@@ -103,9 +103,10 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue';
-import { onLoad } from '@dcloudio/uni-app';
-import { getMenu, getTables, searchDish } from '@/api/customer';
+import { onLoad, onShow, onShareAppMessage, onShareTimeline } from '@dcloudio/uni-app';
+import { getMenu, getTables, searchDish, getStore } from '@/api/customer';
 import { price } from '@/utils/format';
+import { fixUrl } from '@/config';
 import { useCartStore } from '@/store/cart';
 import { useUserStore } from '@/store/user';
 import { DEFAULT_STORE_ID, ensureLogin } from '@/utils/auth';
@@ -117,6 +118,7 @@ const cart = useCartStore();
 const userStore = useUserStore();
 
 const storeId = ref('');
+const store = ref({});
 const categories = ref([]);
 const currentCat = ref(0);
 const anchor = ref('');
@@ -134,19 +136,84 @@ const panelVisible = ref(false);
 
 onLoad(async (opt) => {
   await ensureLogin();
-  storeId.value = userStore.storeId || String(DEFAULT_STORE_ID);
+  // 从分享链接进来时以链接里的门店为准，好友可能先于自己到过别家门店
+  storeId.value = (opt && opt.storeId) || userStore.storeId || String(DEFAULT_STORE_ID);
+  userStore.setStore({ storeId: storeId.value });
   cart.bindStore(storeId.value);
-  if (opt.orderType) orderType.value = opt.orderType;
+  if (opt && opt.orderType) orderType.value = opt.orderType;
   else orderType.value = userStore.orderType || 'TAKEAWAY';
-  if (userStore.tableId) {
+  if (opt && opt.tableId) {
+    // 分享带桌号：直接定位到该桌，同桌扫码后无需再选
+    tableId.value = opt.tableId;
+    tableNo.value = decodeURIComponent(opt.tableNo || '');
+    userStore.setStore({ tableId: tableId.value, tableNo: tableNo.value, orderType: 'DINE_IN' });
+    orderType.value = 'DINE_IN';
+  } else if (userStore.tableId) {
     tableId.value = userStore.tableId;
     tableNo.value = userStore.tableNo || '';
     if (tableId.value !== '0') orderType.value = 'DINE_IN';
   }
+  // 让右上角「转发给朋友 / 分享到朋友圈」可用
+  uni.showShareMenu({ menus: ['shareAppMessage', 'shareTimeline'] });
   await loadMenu();
   await loadTables();
+  await loadStore();
 });
 
+/** tabBar 页面只在首次进入时触发 onLoad，切换回来时同步首页/扫码设置的最新状态 */
+onShow(() => {
+  if (!storeId.value) return; // onLoad 尚未执行完
+  const sid = userStore.storeId;
+  if (sid && sid !== storeId.value) {
+    storeId.value = sid;
+    cart.bindStore(sid);
+    loadMenu();
+    loadTables();
+    loadStore();
+  }
+  if (userStore.orderType) orderType.value = userStore.orderType;
+  tableId.value = userStore.tableId || '';
+  tableNo.value = userStore.tableNo || '';
+});
+
+/** 分享内容：门店名 + 点餐方式（堂食带桌号），封面优先门店图 */
+const shareTitle = computed(() => {
+  const name = store.value.name || '爱猫咖啡';
+  if (orderType.value === 'DINE_IN' && tableNo.value) return `${name} · ${tableNo.value}号桌，一起点单吧🐾`;
+  return `${name} · 在线点单，到店即取🐾`;
+});
+const shareQuery = computed(() => {
+  const q = [`storeId=${storeId.value}`, `orderType=${orderType.value}`];
+  if (orderType.value === 'DINE_IN' && tableId.value && tableId.value !== '0') {
+    q.push(`tableId=${tableId.value}`, `tableNo=${encodeURIComponent(tableNo.value || '')}`);
+  }
+  return q.join('&');
+});
+/** 分享封面：门店封面，兜底用第一道菜的封面 */
+const shareImage = computed(() => {
+  if (store.value.cover) return fixUrl(store.value.cover);
+  const first = (categories.value[0] || {}).dishes || [];
+  return first.length && first[0].cover ? fixUrl(first[0].cover) : '';
+});
+
+onShareAppMessage(() => ({
+  title: shareTitle.value,
+  path: `/pages/order/menu?${shareQuery.value}`,
+  imageUrl: shareImage.value,
+}));
+onShareTimeline(() => ({
+  title: shareTitle.value,
+  query: shareQuery.value,
+  imageUrl: shareImage.value,
+}));
+
+async function loadStore() {
+  try {
+    store.value = await getStore(storeId.value);
+  } catch (e) {
+    /* 门店信息拿不到也不影响点餐 */
+  }
+}
 async function loadMenu() {
   const data = await getMenu(storeId.value);
   categories.value = data.categories || [];
@@ -215,7 +282,10 @@ function goConfirm() {
       title: '需授权手机号',
       content: '打包订单需要绑定手机号以便联系，是否立即授权？',
       success: (r) => {
-        if (r.confirm) uni.navigateTo({ url: '/pages/mine/index?bind=1' });
+        if (!r.confirm) return;
+        // 「我的」是 tabBar 页，用 switchTab + 内存标记传递引导意图
+        userStore.setPendingBind(true);
+        uni.switchTab({ url: '/pages/mine/index' });
       },
     });
     return;

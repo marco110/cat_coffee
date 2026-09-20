@@ -1,11 +1,11 @@
 {
   "name": "cat-coffee",
-  "appid": "",
+  "appid": "wxb4667eda50dde89c",
   "description": "爱猫咖啡 · 扫码点餐",
   "versionName": "1.0.0",
   "versionCode": "100",
   "mp-weixin": {
-    "appid": "",
+    "appid": "wxb4667eda50dde89c",
     "setting": {
       "urlCheck": false,
       "es6": true,

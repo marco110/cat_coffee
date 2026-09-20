@@ -1,25 +1,27 @@
 {
-  "name": "cat-coffee-server",
-  "version": "1.0.0",
-  "private": true,
-  "description": "爱猫咖啡 · 扫码点餐系统 服务端（Node.js + Express + MySQL8）",
-  "main": "src/app.js",
-  "scripts": {
-    "start": "node src/app.js",
-    "dev": "node --watch src/app.js",
-    "init-db": "node scripts/init-db.js",
-    "fix-upload-names": "node scripts/fix-upload-names.js"
-  },
-  "dependencies": {
-    "bcryptjs": "^2.4.3",
-    "cors": "^2.8.5",
-    "dayjs": "^1.11.11",
-    "dotenv": "^16.4.5",
-    "express": "^4.19.2",
-    "jsonwebtoken": "^9.0.2",
-    "multer": "^1.4.5-lts.1",
-    "mysql2": "^3.11.0",
-    "node-cron": "^3.0.3",
-    "svg-captcha": "^1.4.0"
-  }
+    "name": "cat-coffee-server",
+    "version": "1.0.0",
+    "private": true,
+    "description": "爱猫咖啡 · 扫码点餐系统 服务端（Node.js + Express + MySQL8）",
+    "main": "src/app.js",
+    "scripts": {
+        "start": "node src/app.js",
+        "dev": "node --watch src/app.js",
+        "init-db": "node scripts/init-db.js",
+        "fix-upload-names": "node scripts/fix-upload-names.js",
+        "build:admin": "npm --prefix ../admin-web run build",
+        "deploy": "npm run build:admin && npm run start"
+    },
+    "dependencies": {
+        "bcryptjs": "^2.4.3",
+        "cors": "^2.8.5",
+        "dayjs": "^1.11.11",
+        "dotenv": "^16.4.5",
+        "express": "^4.19.2",
+        "jsonwebtoken": "^9.0.2",
+        "multer": "^1.4.5-lts.1",
+        "mysql2": "^3.11.0",
+        "node-cron": "^3.0.3",
+        "svg-captcha": "^1.4.0"
+    }
 }
