@@ -1,8 +1,16 @@
 require('dotenv').config();
 const path = require('path');
 
+// server/ 根目录，SSL 等相对路径都基于它解析
+const serverRoot = path.resolve(__dirname, '..', '..');
+const runMode = String(process.env.RUN_MODE || 'development').toLowerCase();
+
 module.exports = {
+  // development | production
+  runMode,
+  isProduction: runMode === 'production',
   port: Number(process.env.PORT || 3000),
+  httpsPort: Number(process.env.HTTPS_PORT || 443),
   db: {
     host: process.env.DB_HOST || '127.0.0.1',
     port: Number(process.env.DB_PORT || 3306),
@@ -32,6 +40,11 @@ module.exports = {
   adminWeb: {
     enabled: process.env.SERVE_ADMIN_WEB !== 'false',
     dir: path.resolve(__dirname, '..', '..', process.env.ADMIN_WEB_DIR || '../admin-web/dist'),
+  },
+  // HTTPS：仅 RUN_MODE=production 时加载证书
+  ssl: {
+    keyPath: path.resolve(serverRoot, process.env.SSL_KEY_PATH || '/home/ssl/marco2026.site.key'),
+    certPath: path.resolve(serverRoot, process.env.SSL_CERT_PATH || '/home/ssl/marco2026.site_bundle.crt'),
   },
   cron: process.env.ENABLE_CRON !== 'false',
   // 门店账号（店主/店员）的默认密码，新建与重置密码都用它

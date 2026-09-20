@@ -41,8 +41,17 @@ app.use(notFound);
 app.use(errorHandler);
 
 if (require.main === module) {
-  app.listen(config.port, () => {
-    logger.info(`CatCoffee server is running at http://localhost:${config.port}`);
+  const http = require('http');
+  const https = require('https');
+
+  // 创建 HTTP 服务器
+  const httpServer = http.createServer(app);
+
+  // 创建 HTTPS 服务器（仅在生产模式下加载 SSL 证书）
+  let httpsServer = null;
+
+  httpServer.listen(config.port, () => {
+    logger.info(`CatCoffee server is running at http://localhost:${config.port} （RUN_MODE=${config.runMode}）`);
     logger.info(`微信登录模式：${config.wx.mock ? 'MOCK（本地联调）' : '微信真实接口'}`);
     if (serveAdminWeb) {
       logger.info(`超管后台已同域托管：http://localhost:${config.port} （静态目录 ${config.adminWeb.dir}）`);
@@ -50,6 +59,29 @@ if (require.main === module) {
       logger.warn(`未找到超管后台构建产物：${adminIndex}，请先执行 admin-web 的 npm run build`);
     }
   });
+
+  if (config.isProduction) {
+    try {
+      // 检查 SSL 证书文件是否存在
+      if (fs.existsSync(config.ssl.keyPath) && fs.existsSync(config.ssl.certPath)) {
+        const sslConfig = {
+          key: fs.readFileSync(config.ssl.keyPath),
+          cert: fs.readFileSync(config.ssl.certPath),
+        };
+        httpsServer = https.createServer(sslConfig, app);
+        httpsServer.listen(config.httpsPort, () => {
+          logger.info(`✓ SSL 证书加载成功，HTTPS 服务已启动：https://localhost:${config.httpsPort}`);
+        });
+        httpsServer.on('error', (err) => logger.error(`HTTPS 服务异常：${err.message}`));
+      } else {
+        logger.warn(`✗ SSL 证书文件不存在（${config.ssl.keyPath} / ${config.ssl.certPath}），仅运行 HTTP 服务`);
+      }
+    } catch (error) {
+      logger.error(`✗ SSL 证书加载失败：${error.message}`);
+    }
+  } else {
+    logger.info('✓ 开发模式：使用 localhost，不加载 SSL 证书');
+  }
 }
 
 module.exports = app;
