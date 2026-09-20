@@ -24,7 +24,10 @@
 
     <view class="card grid">
       <view class="cell" @click="goList('ONGOING')">
-        <text class="c-icon">🧾</text>
+        <view class="c-icon-wrap">
+          <text class="c-icon">🧾</text>
+          <text v-if="ongoingCount" class="badge">{{ ongoingCount > 99 ? '99+' : ongoingCount }}</text>
+        </view>
         <text class="c-text">进行中</text>
       </view>
       <view class="cell" @click="goList('COMPLETED')">
@@ -58,7 +61,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue';
 import { onShow, onLoad } from '@dcloudio/uni-app';
-import { getProfile, bindPhone, getMemberInfo } from '@/api/customer';
+import { getProfile, bindPhone, getMemberInfo, getOngoing } from '@/api/customer';
 import { fixUrl } from '@/config';
 import { price } from '@/utils/format';
 import { useUserStore } from '@/store/user';
@@ -68,6 +71,7 @@ import CtKitty from '@/components/ct-kitty.vue';
 const userStore = useUserStore();
 const userInfo = ref({});
 const member = ref({});
+const ongoingCount = ref(0);
 const storeId = computed(() => userStore.storeId || String(DEFAULT_STORE_ID));
 
 onLoad(async () => {
@@ -93,6 +97,17 @@ async function load() {
     member.value = await getMemberInfo(storeId.value);
   } catch (e) {
     member.value = { levelName: '普通会员', points: 0 };
+  }
+  loadOngoing();
+}
+
+/** 进行中订单数（PENDING/ACCEPTED/MAKING/READY） */
+async function loadOngoing() {
+  try {
+    const data = await getOngoing();
+    ongoingCount.value = Number(data.count) || 0;
+  } catch (e) {
+    ongoingCount.value = 0;
   }
 }
 
@@ -242,8 +257,26 @@ function goList(status) {
   flex-direction: column;
   align-items: center;
 }
+.c-icon-wrap {
+  position: relative;
+}
 .c-icon {
   font-size: 44rpx;
+}
+.badge {
+  position: absolute;
+  top: -10rpx;
+  right: -22rpx;
+  min-width: 32rpx;
+  height: 32rpx;
+  padding: 0 6rpx;
+  box-sizing: border-box;
+  border-radius: 16rpx;
+  background: $pink-dark;
+  color: #fff;
+  font-size: 20rpx;
+  line-height: 32rpx;
+  text-align: center;
 }
 .c-text {
   margin-top: 10rpx;

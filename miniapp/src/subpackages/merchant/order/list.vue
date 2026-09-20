@@ -52,8 +52,8 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
-import { onShow, onPullDownRefresh, onReachBottom, onUnload } from '@dcloudio/uni-app';
+import { ref } from 'vue';
+import { onLoad, onShow, onPullDownRefresh, onReachBottom, onUnload } from '@dcloudio/uni-app';
 import { orderList, orderAction, orderPay } from '@/api/merchant';
 import { price } from '@/utils/format';
 import { useUserStore } from '@/store/user';
@@ -65,6 +65,7 @@ const TABS = [
   { label: '待接单', value: 'PENDING' },
   { label: '制作中', value: 'MAKING' },
   { label: '待取餐', value: 'READY' },
+  { label: '待收款', value: 'UNPAID' },
   { label: '已完成', value: 'COMPLETED' },
   { label: '已取消', value: 'CANCELLED' },
 ];
@@ -138,7 +139,12 @@ async function onOp(o, b) {
   load(true);
 }
 
-onMounted(() => load(true));
+// 从店主主页「待接单 / 制作中 / 待取餐 / 待收款」进来时，按传入的状态过滤
+onLoad((opt) => {
+  const s = (opt && opt.status) || '';
+  status.value = TABS.some((t) => t.value === s) ? s : '';
+  load(true);
+});
 onShow(() => {
   load(true);
   timer = setInterval(() => load(true), 15000);

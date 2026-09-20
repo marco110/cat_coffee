@@ -31,7 +31,10 @@ router.get(
     const params = [storeId];
 
     const status = req.query.status || '';
-    if (STATUS_GROUP[status]) {
+    if (status === 'UNPAID') {
+      // 待收款：已出品/已完成但未收款（与 dashboard 的 todo.unpaid 口径一致）
+      where.push("o.pay_status = 'UNPAID' AND o.status IN ('READY','COMPLETED')");
+    } else if (STATUS_GROUP[status]) {
       where.push(`o.status IN (${STATUS_GROUP[status].map(() => '?').join(',')})`);
       params.push(...STATUS_GROUP[status]);
     } else if (status && status !== 'ALL') {

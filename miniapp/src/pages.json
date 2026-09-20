@@ -78,9 +78,24 @@
     "backgroundColor": "#FFFFFF",
     "borderStyle": "white",
     "list": [
-      { "pagePath": "pages/index/index", "text": "首页" },
-      { "pagePath": "pages/order/menu", "text": "点餐" },
-      { "pagePath": "pages/mine/index", "text": "我的" }
+      {
+        "pagePath": "pages/index/index",
+        "text": "首页",
+        "iconPath": "static/tabbar/home.png",
+        "selectedIconPath": "static/tabbar/home_on.png"
+      },
+      {
+        "pagePath": "pages/order/menu",
+        "text": "点餐",
+        "iconPath": "static/tabbar/order.png",
+        "selectedIconPath": "static/tabbar/order_on.png"
+      },
+      {
+        "pagePath": "pages/mine/index",
+        "text": "我的",
+        "iconPath": "static/tabbar/mine.png",
+        "selectedIconPath": "static/tabbar/mine_on.png"
+      }
     ]
   },
   "globalStyle": {
