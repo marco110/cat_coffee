@@ -1,6 +1,6 @@
 // 后端服务地址：开发时可改成本机局域网 IP
-export const BASE_URL = 'http://localhost:3000/api';
-export const STATIC_HOST = 'http://localhost:3000';
+export const BASE_URL = 'https://marco2026.site:30000/api';
+export const STATIC_HOST = 'https://marco2026.site:30000';
 
 /** 补全图片地址 */
 export function fixUrl(url) {
