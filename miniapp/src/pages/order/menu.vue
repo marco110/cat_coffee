@@ -137,15 +137,22 @@ onLoad(async (opt) => {
   await loadStore();
 });
 
-/** tabBar 页面只在首次进入时触发 onLoad，切换回来时同步首页/扫码设置的最新状态 */
-onShow(() => {
+/** tabBar 页面只在首次进入时触发 onLoad，切回来时同步最新状态 */
+onShow(async () => {
   if (!storeId.value) return; // onLoad 尚未执行完
   const sid = userStore.storeId;
   if (sid && sid !== storeId.value) {
     storeId.value = sid;
     cart.bindStore(sid);
-    loadMenu();
+    await loadMenu();
     loadStore();
+    return;
+  }
+  // 店主改了规格/售罄/价格后回到点餐页要能看到最新数据（hasSpec 决定是否展示「选规格」）
+  try {
+    await loadMenu();
+  } catch (e) {
+    /* 静默，保留上次列表 */
   }
 });
 

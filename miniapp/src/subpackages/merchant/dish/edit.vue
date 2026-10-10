@@ -68,12 +68,22 @@
 
     <view class="card block" v-if="form.id">
       <view class="bt">规格与加料</view>
-      <text class="tip">规格用于计算加价（如大杯 +3 元），加料直接累加到售价</text>
-      <view class="spec-row" @click="goSpec">配置规格 / 加料</view>
+      <text class="tip">规格用于计算加价（如大杯 +3 元），加料为门店共用并累加到售价</text>
+      <view class="spec-row" @click="goSpec">配置规格{{ specCount ? `（${specCount} 组）` : '' }}</view>
       <view v-for="g in specPreview" :key="g.name" class="spec-item">
-        <text class="s-name">{{ g.name }}</text>
-        <text class="s-items">{{ g.items.map((i) => `${i.name}${i.extraPrice ? '+' + i.extraPrice : ''}`).join(' / ') }}</text>
+        <view class="s-left">
+          <text class="s-name">{{ g.name }}</text>
+          <text class="s-mode">{{ Number(g.multiSelect) ? '多选' : '单选' }}{{ Number(g.isRequired) === 0 ? ' · 可选' : '' }}</text>
+        </view>
+        <text class="s-items">{{ (g.items || []).map((i) => `${i.name}${Number(i.extraPrice) ? ' +' + price(i.extraPrice) : ''}`).join(' / ') }}</text>
       </view>
+      <view v-if="!specPreview.length" class="spec-empty">未配置规格，顾客将直接按原价下单</view>
+      <view class="addon-line">
+        <text class="a-title">门店加料</text>
+        <text v-if="addonNames" class="a-list">{{ addonNames }}</text>
+        <text v-else class="a-none">未配置</text>
+      </view>
+      <view class="manage" @click="goAddon">管理加料库</view>
     </view>
 
     <view class="card block">
@@ -96,15 +106,19 @@
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue';
 import { onLoad, onShow } from '@dcloudio/uni-app';
-import { dishDetail, createDish, updateDish, categoryList, getDishSpec } from '@/api/merchant';
+import { dishDetail, createDish, updateDish, categoryList, getDishSpec, addonList } from '@/api/merchant';
 import { uploadFile } from '@/api/request';
 import { fixUrl } from '@/config';
+import { price } from '@/utils/format';
 import { useUserStore } from '@/store/user';
 
 const userStore = useUserStore();
 const cats = ref([]);
 const catIndex = ref(-1);
 const specPreview = ref([]);
+const addons = ref([]);
+const specCount = computed(() => specPreview.value.length);
+const addonNames = computed(() => addons.value.map((a) => `${a.name}+${price(a.price)}`).join(' / '));
 const STOCK_MODES = [
   { label: '不限量', value: 'UNLIMITED' },
   { label: '每日限量', value: 'DAILY_LIMIT' },
@@ -141,6 +155,9 @@ onLoad(async (opt) => {
   await loadCats();
   if (!dishId) return;
   const d = await dishDetail(dishId);
+  // 规格只在规格页维护：这里不能把详情里的 specGroups 带回表单，
+  // 否则保存菜品时会用进页面时的旧快照覆盖刚配好的规格
+  delete d.specGroups;
   form.value = {
     ...form.value,
     ...d,
@@ -153,16 +170,32 @@ onLoad(async (opt) => {
     images: d.images || [],
   };
   syncCatIndex();
+  loadSpec();
+  loadAddons();
+});
+
+/** 从分类管理 / 规格配置页返回时刷新（watch 会自动重新定位已选中的分类） */
+onShow(() => {
+  loadCats();
+  loadSpec();
+  loadAddons();
+});
+
+async function loadSpec() {
+  if (!dishId) return;
   try {
-    const spec = await getDishSpec(dishId);
-    specPreview.value = spec.specGroups || [];
+    specPreview.value = await getDishSpec(dishId);
   } catch (e) {
     /* ignore */
   }
-});
-
-/** 从分类管理页返回时刷新分类（watch 会自动重新定位已选中的分类） */
-onShow(() => loadCats());
+}
+async function loadAddons() {
+  try {
+    addons.value = await addonList();
+  } catch (e) {
+    addons.value = [];
+  }
+}
 watch(cats, () => syncCatIndex());
 
 async function loadCats() {
@@ -226,7 +259,12 @@ function previewIntro(i) {
 }
 
 function goSpec() {
-  uni.showToast({ title: '规格配置请在 Web 管理后台或联系超管配置', icon: 'none' });
+  uni.navigateTo({
+    url: `/subpackages/merchant/dish/spec?id=${dishId}&name=${encodeURIComponent(form.value.name || '')}`,
+  });
+}
+function goAddon() {
+  uni.navigateTo({ url: '/subpackages/merchant/addon/index' });
 }
 
 async function save() {
@@ -252,6 +290,8 @@ async function save() {
     stockMode: form.value.stockMode,
     dailyLimit: Number(form.value.dailyLimit || 0),
   };
+  // 双保险：菜品保存不携带规格，规格一律走 PUT /merchant/dish/:id/spec
+  delete payload.specGroups;
   try {
     if (form.value.id) await updateDish(form.value.id, payload);
     else await createDish(payload);
@@ -398,12 +438,64 @@ async function save() {
 }
 .spec-item {
   display: flex;
-  padding: 12rpx 0;
+  align-items: flex-start;
+  padding: 16rpx 0;
+  border-bottom: 1rpx dashed $border-color;
   font-size: 24rpx;
   color: $text-secondary;
 }
+.s-left {
+  flex-shrink: 0;
+  width: 180rpx;
+  display: flex;
+  flex-direction: column;
+}
 .s-name {
-  width: 160rpx;
+  font-size: 26rpx;
+  color: $text-primary;
+}
+.s-mode {
+  margin-top: 4rpx;
+  font-size: 20rpx;
+  color: $text-placeholder;
+}
+.s-items {
+  flex: 1;
+  min-width: 0;
+  line-height: 36rpx;
+}
+.spec-empty {
+  padding: 16rpx 0;
+  font-size: 24rpx;
+  color: $text-placeholder;
+}
+.addon-line {
+  display: flex;
+  align-items: center;
+  padding: 16rpx 0;
+  font-size: 24rpx;
+}
+.a-title {
+  flex-shrink: 0;
+  width: 180rpx;
+  color: $text-primary;
+}
+.a-list {
+  flex: 1;
+  min-width: 0;
+  color: $text-secondary;
+}
+.a-none {
+  color: $text-placeholder;
+}
+.manage {
+  margin-top: 12rpx;
+  padding: 16rpx;
+  text-align: center;
+  border: 2rpx dashed $coffee-brown;
+  border-radius: 12rpx;
+  font-size: 26rpx;
+  color: $coffee-brown;
 }
 .footer {
   position: fixed;

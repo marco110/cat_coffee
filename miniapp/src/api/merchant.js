@@ -87,11 +87,28 @@ export function updateDishSort(list) {
 export function batchDishCategory(ids, categoryId) {
   return put(`${M}/dish/batch-category`, { ids, categoryId }, { auth: 'merchant', loading: true });
 }
+/** 规格明细：后端返回的是裸数组，这里统一成数组，避免调用方踩坑 */
 export function getDishSpec(id) {
-  return get(`${M}/dish/${id}/spec`, null, { auth: 'merchant' });
+  return get(`${M}/dish/${id}/spec`, null, { auth: 'merchant' }).then((data) =>
+    Array.isArray(data) ? data : (data && data.specGroups) || []
+  );
 }
 export function saveDishSpec(id, specGroups) {
   return put(`${M}/dish/${id}/spec`, { specGroups }, { auth: 'merchant', loading: true });
+}
+
+/** 门店加料库（所有菜品共用） */
+export function addonList() {
+  return get(`${M}/addon/list`, null, { auth: 'merchant' }).then((data) => (Array.isArray(data) ? data : (data && data.list) || []));
+}
+export function createAddon(data) {
+  return post(`${M}/addon`, data, { auth: 'merchant', loading: true });
+}
+export function updateAddon(id, data) {
+  return put(`${M}/addon/${id}`, data, { auth: 'merchant', loading: true });
+}
+export function deleteAddon(id) {
+  return del(`${M}/addon/${id}`, null, { auth: 'merchant' });
 }
 
 export function tableList() {

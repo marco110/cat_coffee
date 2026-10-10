@@ -64,6 +64,8 @@
         { "path": "order/modify", "style": { "navigationBarTitleText": "修改订单" } },
         { "path": "dish/list", "style": { "navigationBarTitleText": "菜单管理", "enablePullDownRefresh": true } },
         { "path": "dish/edit", "style": { "navigationBarTitleText": "编辑菜品" } },
+        { "path": "dish/spec", "style": { "navigationBarTitleText": "规格配置" } },
+        { "path": "addon/index", "style": { "navigationBarTitleText": "加料库" } },
         { "path": "dish/preview", "style": { "navigationBarTitleText": "菜品预览" } },
         { "path": "category/index", "style": { "navigationBarTitleText": "分类管理" } },
         { "path": "table/index", "style": { "navigationBarTitleText": "桌位管理" } },

@@ -146,7 +146,7 @@ cd ../admin-web && npm install
 ### 3.4 启动
 ```bash
 # 0) 同时启动服务端和admin-web
-cd server && npm run deploy即可先打包admin-web后运行server端
+cd server && npm run deploy 即可先打包admin-web后运行server端
 
 # 1) 服务端
 

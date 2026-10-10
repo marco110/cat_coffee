@@ -68,7 +68,7 @@
     <!-- 备注 -->
     <view class="card group">
       <view class="g-title"><text>备注</text></view>
-      <input v-model="remark" class="remark" placeholder="少冰 / 去糖 / 不要葱" placeholder-class="ph" />
+      <input v-model="remark" class="remark" placeholder="少冰 / 去糖" placeholder-class="ph" />
     </view>
 
     <!-- 商品介绍图片（店主在菜品编辑里上传） -->
