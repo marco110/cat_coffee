@@ -28,6 +28,8 @@ export const useCartStore = defineStore('cart', {
         dishId: String(dish.id),
         name: dish.name,
         cover: dish.cover,
+        // 购物车明细里展示的简单介绍
+        desc: dish.description || dish.desc || '',
         unitPrice: Math.round((dish.price + specExtra) * 100) / 100,
         specItemIds,
         specText,

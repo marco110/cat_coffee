@@ -54,20 +54,42 @@
     <!-- 购物车明细 -->
     <view v-if="panelVisible && cart.count > 0" class="cart-mask" @click="panelVisible = false">
       <view class="cart-panel" @click.stop>
+        <view class="panel-handle" />
         <view class="cart-head">
-          <text>购物车</text>
-          <text class="clear" @click="cart.clear()">清空</text>
+          <text class="ch-title">已选 {{ cart.count }} 件</text>
+          <text class="clear" @click="cart.clear()">🗑 清空</text>
         </view>
         <scroll-view class="cart-list" scroll-y>
           <view v-for="it in cart.items" :key="it.key" class="cart-item">
-            <view class="ci-info">
-              <text class="ci-name">{{ it.name }}</text>
-              <text v-if="it.specText" class="ci-spec">{{ it.specText }}</text>
+            <view class="ci-cover">
+              <image v-if="it.cover" class="ci-img" :src="fixUrl(it.cover)" mode="aspectFill" />
+              <ct-kitty v-else class="ci-ph" mode="face" :size="56" color="#ffd0e0" bow-color="#ffd84d" />
             </view>
-            <text class="ci-price">¥{{ price((it.unitPrice + (it.addonAmount || 0)) * it.quantity) }}</text>
-            <ct-qty :value="it.quantity" @change="(v) => cart.setQuantity(it.key, v)" />
+            <view class="ci-info">
+              <view class="ci-row">
+                <text class="ci-name">{{ it.name }}</text>
+                <text class="ci-price">¥{{ price((it.unitPrice + (it.addonAmount || 0)) * it.quantity) }}</text>
+              </view>
+              <view v-if="it.specText || it.remark" class="ci-tags">
+                <text v-if="it.specText" class="ci-tag">{{ it.specText }}</text>
+                <text v-if="it.remark" class="ci-tag remark">备注 {{ it.remark }}</text>
+              </view>
+              <text v-if="it.desc" class="ci-desc">{{ it.desc }}</text>
+              <view class="ci-row ci-foot">
+                <text class="ci-unit">¥{{ price(it.unitPrice + (it.addonAmount || 0)) }} / 份</text>
+                <ct-qty :value="it.quantity" @change="(v) => cart.setQuantity(it.key, v)" />
+              </view>
+            </view>
           </view>
+          <view class="list-bottom" />
         </scroll-view>
+        <view class="cart-foot">
+          <view class="cf-left">
+            <text class="cf-label">合计</text>
+            <text class="cf-price">¥{{ price(cart.goodsAmount) }}</text>
+          </view>
+          <view class="cf-btn" @click="goConfirm">去结算</view>
+        </view>
       </view>
     </view>
 
@@ -87,6 +109,7 @@ import { DEFAULT_STORE_ID, ensureLogin, ensurePhone } from '@/utils/auth';
 import CtDishItem from '@/components/ct-dish-item.vue';
 import CtQty from '@/components/ct-qty.vue';
 import CtCartBar from '@/components/ct-cart-bar.vue';
+import CtKitty from '@/components/ct-kitty.vue';
 
 const cart = useCartStore();
 const userStore = useUserStore();
@@ -312,9 +335,12 @@ async function goConfirm() {
 .bottom-space {
   height: 160rpx;
 }
+/* 面板浮在底部购物车栏上方，避免明细被购物车栏和 tabBar 挤压 */
 .cart-mask {
   position: fixed;
   inset: 0;
+  padding-bottom: calc(env(safe-area-inset-bottom));
+  box-sizing: border-box;
   background: rgba(0, 0, 0, 0.45);
   z-index: 950;
   display: flex;
@@ -324,59 +350,161 @@ async function goConfirm() {
   width: 100%;
   max-height: 60vh;
   background: #fff;
-  border-radius: 24rpx 24rpx 0 0;
+  border-radius: 28rpx 28rpx 0 0;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 -8rpx 40rpx rgba(240, 72, 128, 0.18);
+}
+.panel-handle {
+  align-self: center;
+  margin-top: 12rpx;
+  width: 72rpx;
+  height: 8rpx;
+  border-radius: 4rpx;
+  background: $border-color;
 }
 .cart-head {
-  padding: 24rpx 28rpx;
+  padding: 18rpx 28rpx;
   display: flex;
+  align-items: center;
   justify-content: space-between;
   border-bottom: 1rpx solid $border-color;
-  font-size: 30rpx;
-  font-weight: 600;
+  .ch-title {
+    font-size: 30rpx;
+    font-weight: 700;
+    color: $text-primary;
+  }
   .clear {
     color: $text-secondary;
     font-size: 26rpx;
-    font-weight: 400;
   }
 }
 .cart-list {
-  max-height: 50vh;
+  flex: 1;
   padding: 0 28rpx;
   box-sizing: border-box;
 }
 .cart-item {
   display: flex;
-  align-items: center;
   padding: 24rpx 0;
   border-bottom: 1rpx dashed $border-color;
+}
+.ci-cover {
+  flex-shrink: 0;
+  width: 120rpx;
+  height: 120rpx;
+  border-radius: 16rpx;
+  overflow: hidden;
+  background: $cream-white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.ci-img {
+  width: 120rpx;
+  height: 120rpx;
+}
+.ci-ph {
+  opacity: 0.9;
 }
 /* min-width: 0 让菜名区域可压缩，避免长菜名 + 规格把整行撑出屏幕 */
 .ci-info {
   flex: 1;
   min-width: 0;
+  margin-left: 20rpx;
   display: flex;
   flex-direction: column;
 }
-.ci-name {
-  font-size: 28rpx;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+.ci-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
 }
-.ci-spec {
-  margin-top: 6rpx;
-  font-size: 22rpx;
-  color: $text-secondary;
+.ci-name {
+  flex: 1;
+  min-width: 0;
+  font-size: 28rpx;
+  font-weight: 600;
+  color: $text-primary;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 .ci-price {
   flex-shrink: 0;
-  margin: 0 24rpx;
-  color: $coffee-brown;
-  font-weight: 600;
+  margin-left: 16rpx;
+  color: $pink-dark;
+  font-size: 30rpx;
+  font-weight: 700;
+}
+.ci-tags {
+  margin-top: 8rpx;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8rpx;
+}
+.ci-tag {
+  padding: 4rpx 14rpx;
+  border-radius: $radius-tag;
+  background: $pink-soft;
+  color: $pink-dark;
+  font-size: 20rpx;
+  &.remark {
+    background: #fff4e0;
+    color: #c98a2b;
+  }
+}
+.ci-desc {
+  margin-top: 8rpx;
+  font-size: 22rpx;
+  color: $text-secondary;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.ci-foot {
+  margin-top: 10rpx;
+}
+.ci-unit {
+  font-size: 22rpx;
+  color: $text-placeholder;
+}
+.list-bottom {
+  height: 16rpx;
+}
+.cart-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18rpx 28rpx calc(18rpx + env(safe-area-inset-bottom));
+  border-top: 1rpx solid $border-color;
+  background: #fff;
+  .cf-left {
+    display: flex;
+    align-items: baseline;
+  }
+  .cf-label {
+    font-size: 24rpx;
+    color: $text-secondary;
+  }
+  .cf-price {
+    margin-left: 8rpx;
+    font-size: 36rpx;
+    font-weight: 800;
+    color: $pink-dark;
+  }
+  .cf-btn {
+    height: 76rpx;
+    padding: 0 48rpx;
+    border-radius: 38rpx;
+    background: $grad-brand;
+    color: #fff;
+    font-size: 30rpx;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    box-shadow: 0 8rpx 20rpx rgba(255, 111, 165, 0.35);
+  }
 }
 </style>

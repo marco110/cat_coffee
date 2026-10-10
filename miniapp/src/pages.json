@@ -25,6 +25,10 @@
       "style": { "navigationBarTitleText": "我的订单", "enablePullDownRefresh": true }
     },
     {
+      "path": "pages/pickup/index",
+      "style": { "navigationBarTitleText": "取餐", "enablePullDownRefresh": true }
+    },
+    {
       "path": "pages/mine/index",
       "style": { "navigationBarTitleText": "我的" }
     },
@@ -89,6 +93,12 @@
         "text": "点餐",
         "iconPath": "static/tabbar/order.png",
         "selectedIconPath": "static/tabbar/order_on.png"
+      },
+      {
+        "pagePath": "pages/pickup/index",
+        "text": "取餐",
+        "iconPath": "static/tabbar/pickup.png",
+        "selectedIconPath": "static/tabbar/pickup_on.png"
       },
       {
         "pagePath": "pages/mine/index",

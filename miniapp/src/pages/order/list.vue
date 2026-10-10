@@ -38,8 +38,8 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
-import { onShow, onReachBottom, onPullDownRefresh } from '@dcloudio/uni-app';
+import { ref } from 'vue';
+import { onLoad, onShow, onReachBottom, onPullDownRefresh } from '@dcloudio/uni-app';
 import { getOrderList, cancelOrder, reorder } from '@/api/customer';
 import { price } from '@/utils/format';
 import { useCartStore } from '@/store/cart';
@@ -103,7 +103,12 @@ function onOp(o, b) {
   }
 }
 
-onMounted(() => load(true));
+// 从「我的」页「进行中 / 已完成 / 已取消」进来时，按传入的状态过滤
+onLoad((opt) => {
+  const s = (opt && opt.status) || '';
+  status.value = TABS.some((t) => t.value === s) ? s : '';
+  load(true);
+});
 onShow(() => load(true));
 onReachBottom(() => {
   page.value += 1;
