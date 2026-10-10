@@ -33,6 +33,10 @@
       "style": { "navigationBarTitleText": "我的" }
     },
     {
+      "path": "pages/mine/profile",
+      "style": { "navigationBarTitleText": "个人信息" }
+    },
+    {
       "path": "pages/mine/member",
       "style": { "navigationBarTitleText": "我的会员卡" }
     },

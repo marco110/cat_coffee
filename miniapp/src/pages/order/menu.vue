@@ -105,7 +105,7 @@ import { price } from '@/utils/format';
 import { fixUrl } from '@/config';
 import { useCartStore } from '@/store/cart';
 import { useUserStore } from '@/store/user';
-import { DEFAULT_STORE_ID, ensureLogin, ensurePhone } from '@/utils/auth';
+import { DEFAULT_STORE_ID, ensureLogin } from '@/utils/auth';
 import CtDishItem from '@/components/ct-dish-item.vue';
 import CtQty from '@/components/ct-qty.vue';
 import CtCartBar from '@/components/ct-cart-bar.vue';
@@ -229,11 +229,8 @@ function openDish(dish) {
   if (Number(dish.soldOut) === 1) return uni.showToast({ title: '今日已售罄', icon: 'none' });
   uni.navigateTo({ url: `/pages/order/dish?id=${dish.id}&storeId=${storeId.value}` });
 }
-async function goConfirm() {
+function goConfirm() {
   if (!cart.count) return;
-  // 手机号未绑定时后端会拒绝下单（BizError: 请先授权手机号），这里先校验并引导绑定
-  const ok = await ensurePhone();
-  if (!ok) return;
   uni.navigateTo({ url: `/pages/order/confirm?storeId=${storeId.value}&orderType=TAKEAWAY` });
 }
 </script>

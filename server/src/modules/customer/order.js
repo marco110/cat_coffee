@@ -13,10 +13,10 @@ const orderService = require('../../services/order');
 
 const router = express.Router();
 
-/** 校验手机号已绑定 */
-async function requireBoundPhone(userId) {
+/** 取当前用户（身份以 openid/unionid 为准，手机号只是选填的联系方式） */
+async function loadUser(userId) {
   const user = await one('SELECT * FROM user WHERE id = ?', [userId]);
-  if (!user || !user.phone) throw new BizError(CODES.PHONE_NOT_BOUND, '请先授权手机号');
+  if (!user) throw new BizError(CODES.UNAUTHORIZED, '登录已失效');
   return user;
 }
 
@@ -119,8 +119,9 @@ router.post(
   rateLimit({ key: (req) => `order:${req.auth.sub}`, windowMs: 10000, max: 1, msg: '下单过于频繁，请稍后再试' }),
   wrap(async (req, res) => {
     const userId = req.auth.sub;
-    const user = await requireBoundPhone(userId);
-    const body = { ...(req.body || {}), phone: user.phone };
+    const user = await loadUser(userId);
+    // 手机号非必填，填了才带到订单里作为联系方式
+    const body = { ...(req.body || {}), phone: user.phone || null };
     const storeId = body.storeId;
     if (!storeId) throw new BizError(CODES.BAD_PARAM, '缺少 storeId');
     const data = await orderService.createOrder({ userId, storeId, body });

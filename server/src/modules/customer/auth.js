@@ -10,6 +10,13 @@ const wechat = require('../../services/wechat');
 
 const router = express.Router();
 
+/** 注册时的默认昵称：可爱风 + 随机编号，如「拿铁喵3721」 */
+const NICK_WORDS = ['奶盖', '拿铁', '摩卡', '布偶', '橘座', '蓝山', '奶糖', '雪球', '芝麻', '小鱼干', '肉桂', '焦糖'];
+function randomNickname() {
+  const w = NICK_WORDS[Math.floor(Math.random() * NICK_WORDS.length)];
+  return `${w}喵${Math.floor(1000 + Math.random() * 9000)}`;
+}
+
 /** 微信静默登录：code -> openid -> 自动注册 -> token */
 router.post(
   '/auth/login',
@@ -20,8 +27,8 @@ router.post(
     let user = await one('SELECT * FROM user WHERE openid = ?', [session.openid]);
     if (!user) {
       const ins = await exec(
-        'INSERT INTO user (openid, unionid, last_login_at, created_at, updated_at) VALUES (?,?,?,?,?)',
-        [session.openid, session.unionid || null, nowSql(), nowSql(), nowSql()]
+        'INSERT INTO user (openid, unionid, nickname, last_login_at, created_at, updated_at) VALUES (?,?,?,?,?,?)',
+        [session.openid, session.unionid || null, randomNickname(), nowSql(), nowSql(), nowSql()]
       );
       user = await one('SELECT * FROM user WHERE id = ?', [ins.insertId]);
     } else {
@@ -111,19 +118,37 @@ router.get(
   })
 );
 
+/** 用户自行维护资料：头像 / 昵称 / 手机号（手机号选填，留空即清除） */
 router.put(
   '/auth/profile',
   customerAuth,
   wrap(async (req, res) => {
-    const { nickname, avatar } = req.body || {};
-    await exec('UPDATE user SET nickname = ?, avatar = ?, updated_at = ? WHERE id = ?', [
-      nickname || null,
-      avatar || null,
-      nowSql(),
-      req.auth.sub,
-    ]);
+    const b = req.body || {};
+    const sets = [];
+    const params = [];
+    if (b.nickname !== undefined) {
+      sets.push('nickname = ?');
+      params.push(String(b.nickname || '').trim().slice(0, 30) || null);
+    }
+    if (b.avatar !== undefined) {
+      sets.push('avatar = ?');
+      params.push(String(b.avatar || '').trim().slice(0, 500) || null);
+    }
+    if (b.phone !== undefined) {
+      // 手机号作为联系方式，非必填：传空字符串表示清除
+      const phone = String(b.phone || '').trim();
+      if (phone && !/^1[3-9]\d{9}$/.test(phone)) {
+        throw new BizError(CODES.BAD_PARAM, '手机号格式不正确');
+      }
+      sets.push('phone = ?');
+      params.push(phone || null);
+    }
+    if (!sets.length) throw new BizError(CODES.BAD_PARAM, '没有需要更新的资料');
+    sets.push('updated_at = ?');
+    params.push(nowSql(), req.auth.sub);
+    await exec(`UPDATE user SET ${sets.join(', ')} WHERE id = ?`, params);
     const user = await one('SELECT * FROM user WHERE id = ?', [req.auth.sub]);
-    return ok(res, formatUser(user));
+    return ok(res, formatUser(user), '已保存');
   })
 );
 

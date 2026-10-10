@@ -1,12 +1,17 @@
 <template>
   <view class="page">
-    <view class="user-card">
+    <view class="user-card" @click="go('/pages/mine/profile')">
       <ct-kitty class="card-paw" mode="paw" :size="200" color="#ffffff" opacity="0.18" />
-      <image class="avatar" :src="fixUrl(userInfo.avatar)" mode="aspectFill" />
+      <image class="avatar" :src="avatarUrl" mode="aspectFill" />
       <view class="u-info">
-        <text class="nickname">{{ userInfo.nickname || '微信用户' }}</text>
-        <text v-if="userInfo.phone" class="phone">{{ userInfo.phone }}</text>
-        <button v-else class="bind-btn" open-type="getPhoneNumber" @getphonenumber="onPhone">授权手机号</button>
+        <text class="nickname">{{ userInfo.nickname || '爱猫咖啡用户' }}</text>
+        <text class="phone" :class="{ empty: !userInfo.phone }">
+          {{ userInfo.phone || '手机号未填写' }}
+        </text>
+      </view>
+      <view class="u-edit">
+        <text class="edit-txt">编辑资料</text>
+        <text class="arrow">›</text>
       </view>
       <ct-kitty class="card-kitty" mode="face" :size="110" color="#ffffff" bow-color="#ffd84d" />
     </view>
@@ -59,11 +64,10 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed } from 'vue';
 import { onShow, onLoad } from '@dcloudio/uni-app';
-import { getProfile, bindPhone, getMemberInfo, getOngoing } from '@/api/customer';
+import { getProfile, getMemberInfo, getOngoing } from '@/api/customer';
 import { fixUrl } from '@/config';
-import { price } from '@/utils/format';
 import { useUserStore } from '@/store/user';
 import { ensureLogin, DEFAULT_STORE_ID } from '@/utils/auth';
 import CtKitty from '@/components/ct-kitty.vue';
@@ -74,16 +78,15 @@ const member = ref({});
 const ongoingCount = ref(0);
 const storeId = computed(() => userStore.storeId || String(DEFAULT_STORE_ID));
 
+/** 头像为空时显示包内默认头像（渐变粉猫脸） */
+const DEFAULT_AVATAR = '/static/avatar/default.png';
+const avatarUrl = computed(() => fixUrl(userInfo.value.avatar) || DEFAULT_AVATAR);
+
 onLoad(async () => {
   await ensureLogin();
 });
 onShow(async () => {
   await load();
-  // 从点餐页跳转过来授权手机号（tabBar 跳转不带参数，用标记传递）
-  if (userStore.pendingBind) {
-    userStore.setPendingBind(false);
-    if (!userInfo.value.phone) uni.showToast({ title: '请点击上方「授权手机号」', icon: 'none' });
-  }
 });
 
 async function load() {
@@ -108,47 +111,6 @@ async function loadOngoing() {
     ongoingCount.value = Number(data.count) || 0;
   } catch (e) {
     ongoingCount.value = 0;
-  }
-}
-
-/** 微信一键授权手机号 */
-async function onPhone(e) {
-  const detail = e.detail || {};
-  if (detail.code) return doBind({ code: detail.code });
-  // 没拿到 code：区分「用户取消」和「授权失败（如未开通手机号快速验证权限）」
-  const errMsg = String(detail.errMsg || '');
-  if (/cancel|deny/i.test(errMsg)) return uni.showToast({ title: '已取消授权', icon: 'none' });
-  uni.showModal({
-    title: '手机号授权失败',
-    content: '暂无法获取微信手机号，可改为手动输入手机号绑定',
-    confirmText: '手动输入',
-    cancelText: '稍后再说',
-    success: (r) => r.confirm && inputPhone(),
-  });
-}
-
-/** 兜底：手动输入手机号绑定 */
-function inputPhone() {
-  uni.showModal({
-    title: '绑定手机号',
-    editable: true,
-    placeholderText: '请输入 11 位手机号',
-    success: async (r) => {
-      if (!r.confirm) return;
-      const phone = String(r.content || '').trim();
-      if (!/^1[3-9]\d{9}$/.test(phone)) return uni.showToast({ title: '手机号格式不正确', icon: 'none' });
-      await doBind({ phone });
-    },
-  });
-}
-
-async function doBind(payload) {
-  try {
-    await bindPhone(payload);
-    uni.showToast({ title: '绑定成功', icon: 'none' });
-    await load();
-  } catch (err) {
-    uni.showToast({ title: err.msg || '绑定失败', icon: 'none' });
   }
 }
 
@@ -204,15 +166,25 @@ function goList(status) {
   margin-top: 8rpx;
   font-size: 26rpx;
   opacity: 0.85;
+  &.empty {
+    opacity: 0.6;
+  }
 }
-.bind-btn {
-  margin-top: 12rpx;
-  padding: 8rpx 28rpx;
-  font-size: 24rpx;
-  color: $coffee-brown;
-  background: #fff;
-  border-radius: 30rpx;
-  line-height: 1.6;
+.u-edit {
+  margin-left: auto;
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  padding: 8rpx 0 8rpx 24rpx;
+  .edit-txt {
+    font-size: 24rpx;
+    opacity: 0.9;
+  }
+  .arrow {
+    margin-left: 6rpx;
+    color: rgba(255, 255, 255, 0.9);
+  }
 }
 .member {
   margin-top: 24rpx;
