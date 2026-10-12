@@ -4,7 +4,7 @@
     <view class="head-card">
       <ct-kitty class="card-paw" mode="paw" :size="160" color="#ffffff" opacity="0.18" />
       <button class="avatar-btn" open-type="chooseAvatar" @chooseavatar="onChooseAvatar">
-        <image class="avatar" :src="avatarUrl" mode="aspectFill" />
+        <image class="avatar" :src="avatarUrl" mode="aspectFill" @error="avatarFailed = true" />
         <text class="avatar-tip">点击更换</text>
       </button>
       <text class="head-tip">支持微信头像或从相册选择</text>
@@ -52,6 +52,7 @@ import { uploadFile } from '@/api/request';
 import { fixUrl } from '@/config';
 import { useUserStore } from '@/store/user';
 import { ensureLogin } from '@/utils/auth';
+import { DEFAULT_AVATAR } from '@/utils/default-avatar';
 import CtKitty from '@/components/ct-kitty.vue';
 
 const userStore = useUserStore();
@@ -60,9 +61,9 @@ const phone = ref('');
 const avatarRemote = ref('');
 const saving = ref(false);
 
-/** 头像为空时显示包内默认头像（渐变粉猫脸） */
-const DEFAULT_AVATAR = '/static/avatar/default.png';
-const avatarUrl = computed(() => fixUrl(avatarRemote.value) || DEFAULT_AVATAR);
+// 头像为空或加载失败（旧 URL 失效）时回落到默认头像
+const avatarFailed = ref(false);
+const avatarUrl = computed(() => (avatarFailed.value ? '' : fixUrl(avatarRemote.value)) || DEFAULT_AVATAR);
 
 onShow(async () => {
   await ensureLogin();
@@ -76,6 +77,7 @@ onShow(async () => {
 
 function fill(p) {
   avatarRemote.value = p.avatar || '';
+  avatarFailed.value = false;
   nickname.value = p.nickname || '';
   phone.value = p.phone || '';
   userStore.setSession({ token: userStore.token, userId: p.id, userInfo: p });

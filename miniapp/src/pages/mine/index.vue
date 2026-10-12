@@ -2,7 +2,7 @@
   <view class="page">
     <view class="user-card" @click="go('/pages/mine/profile')">
       <ct-kitty class="card-paw" mode="paw" :size="200" color="#ffffff" opacity="0.18" />
-      <image class="avatar" :src="avatarUrl" mode="aspectFill" />
+      <image class="avatar" :src="avatarUrl" mode="aspectFill" @error="avatarFailed = true" />
       <view class="u-info">
         <text class="nickname">{{ userInfo.nickname || '爱猫咖啡用户' }}</text>
         <text class="phone" :class="{ empty: !userInfo.phone }">
@@ -70,6 +70,7 @@ import { getProfile, getMemberInfo, getOngoing } from '@/api/customer';
 import { fixUrl } from '@/config';
 import { useUserStore } from '@/store/user';
 import { ensureLogin, DEFAULT_STORE_ID } from '@/utils/auth';
+import { DEFAULT_AVATAR } from '@/utils/default-avatar';
 import CtKitty from '@/components/ct-kitty.vue';
 
 const userStore = useUserStore();
@@ -78,9 +79,9 @@ const member = ref({});
 const ongoingCount = ref(0);
 const storeId = computed(() => userStore.storeId || String(DEFAULT_STORE_ID));
 
-/** 头像为空时显示包内默认头像（渐变粉猫脸） */
-const DEFAULT_AVATAR = '/static/avatar/default.png';
-const avatarUrl = computed(() => fixUrl(userInfo.value.avatar) || DEFAULT_AVATAR);
+// 头像为空或加载失败（旧 URL 失效）时回落到默认头像
+const avatarFailed = ref(false);
+const avatarUrl = computed(() => (avatarFailed.value ? '' : fixUrl(userInfo.value.avatar)) || DEFAULT_AVATAR);
 
 onLoad(async () => {
   await ensureLogin();

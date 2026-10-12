@@ -51,4 +51,12 @@ module.exports = {
   storeUser: {
     defaultPassword: process.env.STORE_USER_DEFAULT_PASSWORD || 'aimao2026',
   },
+  // PushPlus 消息推送（新订单通知店主）：改用自己的账号时替换 token 即可
+  pushplus: {
+    enabled: process.env.PUSHPLUS_ENABLED !== 'false',
+    token: process.env.PUSHPLUS_TOKEN || '9a6a1d4b64bd405fa14d8eaf3adc1b77',
+    // 一对一推送留空；群组/topic 推送填群组编码
+    topic: process.env.PUSHPLUS_TOPIC || '',
+    api: process.env.PUSHPLUS_API || 'https://www.pushplus.plus/send',
+  },
 };

@@ -10,6 +10,7 @@ const { sid, json } = require('../../utils/misc');
 const { resolveItems, computePrice } = require('../../services/price');
 const memberService = require('../../services/member');
 const orderService = require('../../services/order');
+const { notifyNewOrder } = require('../../services/notify');
 
 const router = express.Router();
 
@@ -125,6 +126,8 @@ router.post(
     const storeId = body.storeId;
     if (!storeId) throw new BizError(CODES.BAD_PARAM, '缺少 storeId');
     const data = await orderService.createOrder({ userId, storeId, body });
+    // 事务已提交，推送新订单给店主；失败不影响下单结果
+    notifyNewOrder({ userId, storeId, order: data }).catch(() => {});
     return ok(res, data, '下单成功');
   })
 );
