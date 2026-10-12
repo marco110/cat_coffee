@@ -40,14 +40,16 @@ async function notifyNewOrder({ userId, storeId, order }) {
           .join('<br/>')
       );
     }
-    // 3 顾客
+
+    // 3 金额
+    rows.push(`<b>金额</b>：<b style="color:#f0487e">¥${amount}</b>`);
+
+    // 4 顾客
     const nickname = user && user.nickname ? user.nickname : '';
     const phone = user && user.phone ? user.phone : '';
     if (nickname || phone) {
       rows.push(`<b>顾客</b>：${escapeHtml(nickname)}${phone ? `　${escapeHtml(phone)}` : ''}`);
     }
-    // 4 金额
-    rows.push(`<b>金额</b>：<b style="color:#f0487e">¥${amount}</b>`);
     // 5 取餐码
     if (order.pickupCode) {
       rows.push(`<b>取餐码</b>：<span style="font-size:20px"><b>${escapeHtml(order.pickupCode)}</b></span>`);
@@ -57,10 +59,10 @@ async function notifyNewOrder({ userId, storeId, order }) {
       order.orderType === 'DINE_IN' && order.tableNo ? `${typeText}　桌号 ${escapeHtml(order.tableNo)}` : typeText;
     rows.push(`<b>方式</b>：${typeLine}`);
     rows.push('<hr/>');
-    // 7 门店
-    rows.push(`<b>门店</b>：${escapeHtml(store ? store.name : '')}`);
+    // 7 门店（分隔线下方居中显示）
+    const shopRow = `<div style="text-align:center"><b>${escapeHtml(store ? store.name : '')}</b></div>`;
 
-    await pushplus({ title, content: rows.join('<br/>') });
+    await pushplus({ title, content: rows.join('<br/>') + shopRow });
     return true;
   } catch (e) {
     logger.warn('新订单推送失败:', e.message);
