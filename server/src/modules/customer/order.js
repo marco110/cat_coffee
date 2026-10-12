@@ -10,7 +10,7 @@ const { sid, json } = require('../../utils/misc');
 const { resolveItems, computePrice } = require('../../services/price');
 const memberService = require('../../services/member');
 const orderService = require('../../services/order');
-const { notifyNewOrder } = require('../../services/notify');
+const { notifyNewOrder, notifyCancelOrder } = require('../../services/notify');
 
 const router = express.Router();
 
@@ -236,14 +236,17 @@ router.post(
     if (o.status !== 'PENDING') {
       throw new BizError(CODES.ORDER_STATUS_INVALID, '当前状态无法自助取消，请联系店员协商');
     }
+    const reason = (req.body || {}).reason || '顾客取消';
     const r = await orderService.transition({
       orderId: o.id,
       storeId: o.store_id,
       action: 'CANCEL',
       operatorType: 'CUSTOMER',
       operatorId: req.auth.sub,
-      extra: { reason: (req.body || {}).reason || '顾客取消' },
+      extra: { reason },
     });
+    // 事务已提交，推送取消通知给店主；失败不影响取消结果
+    notifyCancelOrder({ orderId: o.id, storeId: o.store_id, reason }).catch(() => {});
     return ok(res, { status: r.status, cancelledAt: r.cancelled_at }, '订单已取消');
   })
 );
