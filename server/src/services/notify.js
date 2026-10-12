@@ -18,16 +18,16 @@ async function notifyNewOrder({ userId, storeId, order }) {
 
     const amount = Number(order.payAmount || 0).toFixed(2);
     const typeText = ORDER_TYPE_TEXT[order.orderType] || '自取';
-    const title = `🔔 新${typeText}订单 ¥${amount}｜${store ? store.name : ''}`;
+    // 标题：单品「商品名*数量-待接单」，多品「n个商品-待接单」
+    const title =
+      items.length === 1
+        ? `${items[0].dish_name}*${items[0].quantity}-待接单`
+        : `${items.length}个商品-待接单`;
 
     const rows = [];
-    rows.push(`<b>门店</b>：${escapeHtml(store ? store.name : '')}`);
+    // 1 订单号
     rows.push(`<b>订单号</b>：${escapeHtml(order.orderNo)}`);
-    rows.push(`<b>方式</b>：${typeText}`);
-    if (order.orderType === 'DINE_IN' && order.tableNo) rows.push(`<b>桌号</b>：${escapeHtml(order.tableNo)}`);
-    if (order.pickupCode) rows.push(`<b>取餐码</b>：<span style="font-size:20px"><b>${escapeHtml(order.pickupCode)}</b></span>`);
-    rows.push(`<b>应收金额</b>：<b style="color:#f0487e">¥${amount}</b>`);
-
+    // 2 商品明细
     if (items.length) {
       rows.push('<b>商品明细</b>：');
       rows.push(
@@ -40,13 +40,25 @@ async function notifyNewOrder({ userId, storeId, order }) {
           .join('<br/>')
       );
     }
-
+    // 3 顾客
     const nickname = user && user.nickname ? user.nickname : '';
     const phone = user && user.phone ? user.phone : '';
     if (nickname || phone) {
       rows.push(`<b>顾客</b>：${escapeHtml(nickname)}${phone ? `　${escapeHtml(phone)}` : ''}`);
     }
-    rows.push(`<b>状态</b>：${order.status === 'ACCEPTED' ? '已自动接单，请尽快制作' : '待接单，请到店主端处理'}`);
+    // 4 金额
+    rows.push(`<b>金额</b>：<b style="color:#f0487e">¥${amount}</b>`);
+    // 5 取餐码
+    if (order.pickupCode) {
+      rows.push(`<b>取餐码</b>：<span style="font-size:20px"><b>${escapeHtml(order.pickupCode)}</b></span>`);
+    }
+    // 6 方式
+    const typeLine =
+      order.orderType === 'DINE_IN' && order.tableNo ? `${typeText}　桌号 ${escapeHtml(order.tableNo)}` : typeText;
+    rows.push(`<b>方式</b>：${typeLine}`);
+    rows.push('<hr/>');
+    // 7 门店
+    rows.push(`<b>门店</b>：${escapeHtml(store ? store.name : '')}`);
 
     await pushplus({ title, content: rows.join('<br/>') });
     return true;
