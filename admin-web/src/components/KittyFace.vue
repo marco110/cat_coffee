@@ -1,5 +1,7 @@
 <template>
-  <svg class="kitty-face" :width="size" :height="size" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- 优先使用 /kitty/face.png 主题图（public/kitty/ 下替换同名文件即可换形象），加载失败回退 SVG 绘制 -->
+  <img v-if="!imgFailed" class="kitty-face" :src="faceSrc" :width="size" :height="size" alt="" @error="imgFailed = true" />
+  <svg v-else class="kitty-face" :width="size" :height="size" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
     <!-- 耳朵 -->
     <path d="M13 26 Q10 8 17 9 Q25 13 29 19 Z" :fill="color" />
     <path d="M51 26 Q54 8 47 9 Q39 13 35 19 Z" :fill="color" />
@@ -29,17 +31,25 @@
 </template>
 
 <script setup>
-defineProps({
+import { computed, ref } from 'vue';
+
+const props = defineProps({
   size: { type: [Number, String], default: 40 },
   color: { type: String, default: '#ff6fa5' },
   bow: { type: String, default: '#ef3d6b' },
   nose: { type: String, default: '#ffc53d' },
+  /** 直接指定图片路径；默认取 public/kitty/face.png */
+  src: { type: String, default: '/kitty/face.png' },
 });
+
+const imgFailed = ref(false);
+const faceSrc = computed(() => props.src);
 </script>
 
 <style scoped>
 .kitty-face {
   display: block;
   flex: none;
+  object-fit: contain;
 }
 </style>

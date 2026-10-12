@@ -2,18 +2,18 @@
   <view class="page">
     <view class="user-card" @click="go('/pages/mine/profile')">
       <ct-kitty class="card-paw" mode="paw" :size="200" color="#ffffff" opacity="0.18" />
-      <image class="avatar" :src="avatarUrl" mode="aspectFill" @error="avatarFailed = true" />
+      <image class="avatar" :src="avatarUrl" mode="aspectFill" @error="avatarFailed++" />
       <view class="u-info">
         <text class="nickname">{{ userInfo.nickname || '爱猫咖啡用户' }}</text>
         <text class="phone" :class="{ empty: !userInfo.phone }">
-          {{ userInfo.phone || '手机号未填写' }}
+          {{ userInfo.phone || '' }}
         </text>
       </view>
       <view class="u-edit">
         <text class="edit-txt">编辑资料</text>
         <text class="arrow">›</text>
       </view>
-      <ct-kitty class="card-kitty" mode="face" :size="110" color="#ffffff" bow-color="#ffd84d" />
+      <!-- <ct-kitty class="card-kitty" mode="face" :size="110" color="#ffffff" bow-color="#ffd84d" /> -->
     </view>
 
     <view class="card member" @click="go('/pages/mine/member')">
@@ -70,7 +70,7 @@ import { getProfile, getMemberInfo, getOngoing } from '@/api/customer';
 import { fixUrl } from '@/config';
 import { useUserStore } from '@/store/user';
 import { ensureLogin, DEFAULT_STORE_ID } from '@/utils/auth';
-import { DEFAULT_AVATAR } from '@/utils/default-avatar';
+import { DEFAULT_AVATAR, DEFAULT_AVATAR_FALLBACK } from '@/utils/default-avatar';
 import CtKitty from '@/components/ct-kitty.vue';
 
 const userStore = useUserStore();
@@ -79,9 +79,13 @@ const member = ref({});
 const ongoingCount = ref(0);
 const storeId = computed(() => userStore.storeId || String(DEFAULT_STORE_ID));
 
-// 头像为空或加载失败（旧 URL 失效）时回落到默认头像
-const avatarFailed = ref(false);
-const avatarUrl = computed(() => (avatarFailed.value ? '' : fixUrl(userInfo.value.avatar)) || DEFAULT_AVATAR);
+// 头像为空或加载失败（旧 URL 失效）时回落到默认头像；主题图再失败则用内联 base64 兜底
+const avatarFailed = ref(0);
+const avatarUrl = computed(() => {
+  if (avatarFailed.value >= 2) return DEFAULT_AVATAR_FALLBACK;
+  if (avatarFailed.value === 1) return DEFAULT_AVATAR;
+  return fixUrl(userInfo.value.avatar) || DEFAULT_AVATAR;
+});
 
 onLoad(async () => {
   await ensureLogin();
@@ -91,6 +95,7 @@ onShow(async () => {
 });
 
 async function load() {
+  avatarFailed.value = 0;
   try {
     userInfo.value = await getProfile();
     userStore.setSession({ token: userStore.token, userId: userInfo.value.id, userInfo: userInfo.value });

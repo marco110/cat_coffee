@@ -12,6 +12,17 @@ const { operationLog } = require('../../services/log');
 
 const router = express.Router();
 
+/**
+ * 布尔值归一化：兼容 true/false、1/0、"1"/"0"，避免只认 === false 导致传 0 被当成必选
+ * @param {*} v 入参
+ * @param {number} def 缺省值（未传时使用）
+ */
+function bool01(v, def = 0) {
+  if (v === undefined || v === null || v === '') return def;
+  if (v === false || v === true) return v ? 1 : 0;
+  return Number(v) === 0 ? 0 : 1;
+}
+
 /** 规格保存：整体覆盖式提交（事务内先删后插） */
 async function saveSpecs(conn, storeId, dishId, groups) {
   const oldGroups = await conn.query('SELECT id FROM dish_spec_group WHERE dish_id = ?', [dishId]);
@@ -26,7 +37,8 @@ async function saveSpecs(conn, storeId, dishId, groups) {
     if (!g.name) continue;
     const ins = await conn.exec(
       'INSERT INTO dish_spec_group (store_id, dish_id, name, is_required, multi_select, sort, status, created_at, updated_at) VALUES (?,?,?,?,?,?,1,?,?)',
-      [storeId, dishId, String(g.name).slice(0, 20), g.isRequired === false ? 0 : 1, g.multiSelect ? 1 : 0, Number(g.sort || gi), nowSql(), nowSql()]
+      // isRequired 缺省为必选；multiSelect 缺省为单选
+      [storeId, dishId, String(g.name).slice(0, 20), bool01(g.isRequired, 1), bool01(g.multiSelect, 0), Number(g.sort || gi), nowSql(), nowSql()]
     );
     hasSpec = 1;
     for (const [ii, it] of (g.items || []).entries()) {
@@ -39,7 +51,7 @@ async function saveSpecs(conn, storeId, dishId, groups) {
           ins.insertId,
           String(it.name).slice(0, 20),
           n(it.extraPrice),
-          it.isDefault ? 1 : 0,
+          bool01(it.isDefault, 0),
           Number(it.sort || ii),
           nowSql(),
           nowSql(),

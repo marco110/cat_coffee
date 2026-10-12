@@ -1,57 +1,73 @@
 <template>
   <view class="kitty" :class="[`kitty--${mode}`]" :style="rootStyle">
-    <!-- 小猫脸 -->
-    <template v-if="mode === 'face'">
-      <view class="ear ear-l" />
-      <view class="ear ear-r" />
-      <view class="head">
-        <view class="eye eye-l" />
-        <view class="eye eye-r" />
-        <view class="nose" />
-      </view>
-      <view class="whisker w1" />
-      <view class="whisker w2" />
-      <view class="whisker w3" />
-      <view class="whisker w4" />
-      <view class="bow">
-        <view class="loop loop-l" />
-        <view class="loop loop-r" />
-        <view class="knot" />
-      </view>
-    </template>
+    <!-- 优先使用主题图片（可在 static/kitty/ 下替换为官方授权素材），失败回退绘制版 -->
+    <image v-if="imgSrc && !imgFailed" class="k-img" :src="imgSrc" mode="aspectFit" @error="imgFailed = true" />
 
-    <!-- 猫爪 -->
-    <template v-else>
-      <view class="toe t1" />
-      <view class="toe t2" />
-      <view class="toe t3" />
-      <view class="toe t4" />
-      <view class="pad" />
+    <template v-if="!imgSrc || imgFailed">
+      <!-- 小猫脸（Hello Kitty 风：宽圆脸 + 侧边蝴蝶结 + 柠檬黄小鼻 + 无嘴） -->
+      <template v-if="mode === 'face'">
+        <view class="ear ear-l" />
+        <view class="ear ear-r" />
+        <view class="head">
+          <view class="eye eye-l" />
+          <view class="eye eye-r" />
+          <view class="nose" />
+        </view>
+        <view class="whisker w1" />
+        <view class="whisker w2" />
+        <view class="whisker w3" />
+        <view class="whisker w4" />
+        <view class="whisker w5" />
+        <view class="whisker w6" />
+        <view class="bow">
+          <view class="loop loop-l" />
+          <view class="loop loop-r" />
+          <view class="knot" />
+        </view>
+      </template>
+
+      <!-- 猫爪 -->
+      <template v-else>
+        <view class="toe t1" />
+        <view class="toe t2" />
+        <view class="toe t3" />
+        <view class="toe t4" />
+        <view class="pad" />
+      </template>
     </template>
   </view>
 </template>
 
 <script setup>
-import { computed } from 'vue';
+import { computed, ref } from 'vue';
+import { KITTY } from '@/config/theme';
 
 const props = defineProps({
   /** face 小猫脸 / paw 猫爪 */
   mode: { type: String, default: 'face' },
   /** 尺寸（rpx） */
   size: { type: [Number, String], default: 120 },
-  /** 主体色 */
+  /** 主体色（描边与耳朵） */
   color: { type: String, default: '#ff6fa5' },
   /** 蝴蝶结色 */
   bowColor: { type: String, default: '#ef3d6b' },
+  /** 鼻子色（柠檬黄） */
+  noseColor: { type: String, default: '#ffd84d' },
   /** 整体透明度（做水印时调低） */
   opacity: { type: [Number, String], default: 1 },
+  /** 直接指定图片；不传则按 mode 取主题资源 */
+  src: { type: String, default: '' },
 });
+
+const imgFailed = ref(false);
+const imgSrc = computed(() => props.src || (props.mode === 'face' ? KITTY.face : KITTY.paw));
 
 const rootStyle = computed(() => ({
   width: `${props.size}rpx`,
   height: `${props.size}rpx`,
   '--k-color': props.color,
   '--k-bow': props.bowColor,
+  '--k-nose': props.noseColor,
   opacity: Number(props.opacity),
 }));
 </script>
@@ -62,91 +78,109 @@ const rootStyle = computed(() => ({
   display: inline-block;
   flex: none;
 }
+.k-img {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
 
 .kitty--face {
   .head {
     position: absolute;
-    left: 11%;
-    top: 17%;
-    width: 78%;
-    height: 70%;
+    left: 15%;
+    top: 27%;
+    width: 70%;
+    height: 58%;
     box-sizing: border-box;
     border-radius: 50%;
     background: #fff;
-    border: 4rpx solid var(--k-color);
+    border: 3rpx solid var(--k-color);
     z-index: 2;
   }
+  /* 圆润三角耳：方形 + 单尖圆角后旋转 */
   .ear {
     position: absolute;
-    top: 6%;
+    top: 8%;
     width: 26%;
     height: 26%;
     background: var(--k-color);
-    border-radius: 6rpx;
-    transform: rotate(45deg);
     z-index: 1;
   }
   .ear-l {
-    left: 9%;
+    left: 12%;
+    border-radius: 50% 0 50% 50%;
+    transform: rotate(-45deg);
   }
   .ear-r {
-    right: 9%;
+    right: 12%;
+    border-radius: 0 50% 50% 50%;
+    transform: rotate(45deg);
   }
   .eye {
     position: absolute;
-    top: 44%;
-    width: 9%;
-    height: 13%;
+    top: 48%;
+    width: 8%;
+    height: 11%;
     border-radius: 50%;
     background: #4a3340;
     z-index: 3;
   }
   .eye-l {
-    left: 29%;
+    left: 32%;
   }
   .eye-r {
-    right: 29%;
+    right: 32%;
   }
   .nose {
     position: absolute;
-    top: 59%;
-    left: 46%;
-    width: 8%;
-    height: 6%;
+    top: 61%;
+    left: 46.4%;
+    width: 7.2%;
+    height: 5%;
     border-radius: 50%;
-    background: #ffc53d;
+    background: var(--k-nose);
     z-index: 3;
   }
   .whisker {
     position: absolute;
-    width: 17%;
+    width: 16%;
     height: 2rpx;
     background: #4a3340;
     opacity: 0.75;
     z-index: 1;
   }
   .w1 {
-    left: -4%;
-    top: 46%;
-    transform: rotate(8deg);
+    left: 8%;
+    top: 49%;
+    transform: rotate(10deg);
   }
   .w2 {
-    left: -6%;
-    top: 56%;
+    left: 7%;
+    top: 59%;
   }
   .w3 {
-    right: -4%;
-    top: 46%;
-    transform: rotate(-8deg);
+    left: 8%;
+    top: 69%;
+    transform: rotate(-10deg);
   }
   .w4 {
-    right: -6%;
-    top: 56%;
+    right: 8%;
+    top: 49%;
+    transform: rotate(-10deg);
+  }
+  .w5 {
+    right: 7%;
+    top: 59%;
+  }
+  .w6 {
+    right: 8%;
+    top: 69%;
+    transform: rotate(10deg);
   }
   .bow {
     position: absolute;
-    right: -2%;
-    top: 12%;
+    right: 1%;
+    top: 13%;
     width: 42%;
     height: 22%;
     z-index: 4;
@@ -160,11 +194,11 @@ const rootStyle = computed(() => ({
     }
     .loop-l {
       left: 0;
-      transform: rotate(-18deg);
+      transform: rotate(-20deg);
     }
     .loop-r {
       right: 0;
-      transform: rotate(18deg);
+      transform: rotate(20deg);
     }
     .knot {
       position: absolute;
@@ -173,7 +207,7 @@ const rootStyle = computed(() => ({
       width: 32%;
       height: 56%;
       border-radius: 50%;
-      background: #ff86a8;
+      background: var(--k-bow);
     }
   }
 }
