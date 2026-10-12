@@ -181,8 +181,12 @@ onUnload(() => timer && clearInterval(timer));
   border-radius: 30rpx;
   background: rgba(255, 255, 255, 0.2);
   font-size: 24rpx;
+  // 营业中：黄色底 + 深色字，在粉色渐变头部上更醒目
   &.on {
-    background: $success;
+    background: $yellow;
+    color: #7a3d52;
+    font-weight: 600;
+    box-shadow: 0 4rpx 16rpx rgba(255, 216, 77, 0.45);
   }
 }
 .kpi {

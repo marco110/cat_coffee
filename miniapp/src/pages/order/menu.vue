@@ -339,26 +339,40 @@ function goConfirm() {
 .bottom-space {
   height: 160rpx;
 }
-/* 面板浮在底部购物车栏上方，避免明细被购物车栏和 tabBar 挤压 */
+/* 面板整体抬到购物车栏上方：
+   购物车栏本身 bottom 24rpx + 高 100rpx，其购物车图标还向上探出 32rpx，
+   故预留 176rpx 让面板底边与图标顶部留出间隙，
+   z-index 低于购物车栏(900)，保证面板展开时购物车栏仍可见可点 */
 .cart-mask {
   position: fixed;
   inset: 0;
-  padding-bottom: calc(env(safe-area-inset-bottom));
+  padding-bottom: calc(176rpx + env(safe-area-inset-bottom));
   box-sizing: border-box;
   background: rgba(0, 0, 0, 0.45);
-  z-index: 950;
+  z-index: 850;
   display: flex;
   align-items: flex-end;
 }
 .cart-panel {
   width: 100%;
-  max-height: 60vh;
+  max-height: calc(100vh - 280rpx);
   background: #fff;
   border-radius: 28rpx 28rpx 0 0;
   display: flex;
   flex-direction: column;
   overflow: hidden;
   box-shadow: 0 -8rpx 40rpx rgba(240, 72, 128, 0.18);
+  animation: sheet-up 0.22s ease-out;
+}
+@keyframes sheet-up {
+  from {
+    transform: translateY(40rpx);
+    opacity: 0.6;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
 }
 .panel-handle {
   align-self: center;
