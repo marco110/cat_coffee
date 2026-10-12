@@ -114,12 +114,11 @@ function onOp(o, b) {
   if (b === 'CANCEL') {
     uni.showModal({
       title: '取消订单',
-      editable: true,
-      placeholderText: '请输入取消原因',
+      content: '确认取消该订单？取消后优惠券与积分将原路退回',
       success: async (r) => {
         if (!r.confirm) return;
         try {
-          await cancelOrder(o.id, r.content || '');
+          await cancelOrder(o.id, '顾客取消');
           uni.showToast({ title: '已取消', icon: 'none' });
           load(true);
         } catch (e) {
