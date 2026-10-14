@@ -33,9 +33,9 @@ module.exports = {
     // 订阅消息模板（小程序后台「订阅消息」里申请后填入）
     subscribe: {
       // 取餐提醒（模板编号 1820）
-      pickup: process.env.WX_TMPL_PICKUP || 'd-p-AMhDOre-7T-Yo0_LyAXuQBLIUdq19_0-oH9gqmg',
+      pickup: process.env.WX_TMPL_PICKUP || '',
       // 跳转版本：formal 正式版 / trial 体验版 / developer 开发版
-      state: process.env.WX_MINIPROGRAM_STATE || 'formal',
+      state: process.env.WX_MINIPROGRAM_STATE || 'developer',
       // 消息内跳转的详情页路径
       page: process.env.WX_SUBSCRIBE_PAGE || 'pages/order/detail',
     },
