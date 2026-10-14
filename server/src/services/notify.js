@@ -1,6 +1,8 @@
 const { one, query } = require('../db');
+const config = require('../config');
 const logger = require('../common/logger');
 const { pushplus, escapeHtml } = require('./push');
+const { sendSubscribeMessage } = require('./wechat');
 
 const ORDER_TYPE_TEXT = { DINE_IN: '堂食', TAKEAWAY: '自取' };
 
@@ -131,4 +133,65 @@ async function notifyCancelOrder({ orderId, storeId, reason }) {
   }
 }
 
-module.exports = { notifyNewOrder, notifyCancelOrder };
+/**
+ * 订阅消息字段裁剪：thing 类型微信限制 20 个字符，超长会被拒（errcode 47001）
+ * @param {*} v 原值
+ * @param {number} max 最大字符数
+ */
+function clip(v, max = 20) {
+  const s = String(v === undefined || v === null ? '' : v).trim();
+  if (!s) return '';
+  return s.length <= max ? s : `${s.slice(0, max - 1)}…`;
+}
+
+/**
+ * 取餐提醒（订阅消息，发给顾客）
+ * 店主点「出品完成」后调用，模板：取餐提醒（编号 1820）
+ * 字段：character_string4 取餐号码 / thing8 餐品数量 / thing5 餐品详情
+ *
+ * @param {{orderId:string|number}} param
+ */
+async function notifyPickup({ orderId }) {
+  try {
+    const tpl = (config.wx.subscribe || {}).pickup;
+    if (!tpl) return false;
+
+    const o = await one('SELECT * FROM order_main WHERE id = ?', [orderId]);
+    if (!o) return false;
+
+    const user = await one('SELECT openid FROM user WHERE id = ?', [o.user_id]);
+    // MOCK 环境的 openid 是本地派生的，发不出去，直接跳过
+    if (!user || !user.openid || String(user.openid).startsWith('mock_')) {
+      logger.info('取餐提醒跳过：用户无有效 openid');
+      return false;
+    }
+
+    const items = await query('SELECT * FROM order_item WHERE order_id = ? ORDER BY id', [o.id]);
+    const totalQty = items.reduce((s, i) => s + Number(i.quantity || 0), 0);
+    const detail = items
+      .map((it) => {
+        const spec = it.spec_text ? `(${it.spec_text})` : '';
+        return `${it.dish_name}${spec}x${it.quantity}`;
+      })
+      .join(' ');
+
+    const res = await sendSubscribeMessage({
+      openid: user.openid,
+      templateId: tpl,
+      page: `${config.wx.subscribe.page}?id=${orderId}`,
+      miniprogramState: config.wx.subscribe.state,
+      data: {
+        // 取餐号码：优先取餐码，堂食无取餐码时退化为订单号后 8 位
+        character_string4: { value: clip(o.pickup_code || String(o.order_no || '').slice(-8), 32) },
+        thing8: { value: clip(`共${totalQty}件`, 20) },
+        thing5: { value: clip(detail || '餐品', 20) },
+      },
+    });
+    return !!(res && res.errcode === 0);
+  } catch (e) {
+    logger.warn('取餐提醒订阅消息发送失败:', e.message);
+    return false;
+  }
+}
+
+module.exports = { notifyNewOrder, notifyCancelOrder, notifyPickup };

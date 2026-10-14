@@ -60,9 +60,10 @@
       <text class="pay-tip">支付方式：到店付款（离店时前台结算）</text>
     </view>
 
+    <view v-if="storeClosed" class="closed-tip">😴 门店休息中，暂不可下单，请稍后再来～</view>
     <view class="submit-wrap">
-      <view class="submit" :class="{ loading: submitting }" @click="submit">
-        {{ submitting ? '提交中...' : `提交订单 ¥${price(detail.payAmount || 0)}` }}
+      <view class="submit" :class="{ loading: submitting, disabled: storeClosed }" @click="submit">
+        {{ storeClosed ? '门店休息中' : submitting ? '提交中...' : `提交订单 ¥${price(detail.payAmount || 0)}` }}
       </view>
     </view>
 
@@ -98,7 +99,7 @@
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue';
 import { onLoad } from '@dcloudio/uni-app';
-import { previewOrder, createOrder, getMemberInfo, getAvailableCoupons } from '@/api/customer';
+import { previewOrder, createOrder, getMemberInfo, getAvailableCoupons, getStore } from '@/api/customer';
 import { fixUrl } from '@/config';
 import { price, discountText, dateText } from '@/utils/format';
 import { useCartStore } from '@/store/cart';
@@ -126,12 +127,25 @@ const selectedCoupon = computed(() => coupons.value.find((c) => c.userCouponId =
 const couponVisible = ref(false);
 const submitting = ref(false);
 
+/** 门店休息中：businessStatus 明确为 0 才算休息（未加载到门店信息时不拦截） */
+const store = ref({});
+const storeClosed = computed(() => Number(store.value.businessStatus) === 0);
+
+async function loadStore() {
+  try {
+    store.value = await getStore(storeId.value);
+  } catch (e) {
+    /* 门店信息拿不到也不影响下单 */
+  }
+}
+
 onLoad(async (opt) => {
   storeId.value = opt.storeId || userStore.storeId;
   orderType.value = opt.orderType || 'TAKEAWAY';
   tableId.value = opt.tableId || '';
   tableNo.value = opt.tableNo || '';
   await load();
+  await loadStore();
 });
 
 onMounted(() => {
@@ -179,6 +193,16 @@ function pickCoupon(c) {
 async function submit() {
   if (submitting.value) return;
   if (!cart.count) return uni.showToast({ title: '购物车为空', icon: 'none' });
+  // 以服务端最新营业状态为准：停留期间店主可能已打烊
+  await loadStore();
+  if (storeClosed.value) {
+    return uni.showModal({
+      title: '门店休息中',
+      content: `「${store.value.name || '本店'}」正在休息，暂不可下单，请稍后再来～`,
+      showCancel: false,
+      confirmText: '我知道了',
+    });
+  }
   submitting.value = true;
   try {
     const res = await createOrder({
@@ -191,7 +215,8 @@ async function submit() {
     cart.clear();
     uni.showToast({ title: res.tip || '下单成功', icon: 'none' });
     setTimeout(() => {
-      uni.redirectTo({ url: `/pages/order/detail?id=${res.orderId}` });
+      // subscribe=1：到详情页后再弹订阅授权，避免跳转把授权弹窗打断
+      uni.redirectTo({ url: `/pages/order/detail?id=${res.orderId}&subscribe=1` });
     }, 600);
   } catch (e) {
     uni.showToast({ title: e.msg || '下单失败', icon: 'none' });
@@ -337,6 +362,19 @@ async function submit() {
   &.loading {
     opacity: 0.6;
   }
+  &.disabled {
+    background: #c8c8cc;
+  }
+}
+.closed-tip {
+  margin: 0 24rpx 20rpx;
+  padding: 20rpx 24rpx;
+  border-radius: 16rpx;
+  background: #fff4d6;
+  border: 2rpx solid #ffe4a3;
+  font-size: 26rpx;
+  color: #8a5a2b;
+  text-align: center;
 }
 .mask {
   position: fixed;

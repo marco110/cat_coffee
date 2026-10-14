@@ -22,6 +22,85 @@ function httpsGetJson(url) {
   });
 }
 
+function httpsPostJson(url, body) {
+  return new Promise((resolve, reject) => {
+    const data = JSON.stringify(body || {});
+    const req = https.request(
+      url,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(data) },
+      },
+      (res) => {
+        let buf = '';
+        res.on('data', (c) => (buf += c));
+        res.on('end', () => {
+          try {
+            resolve(JSON.parse(buf));
+          } catch (e) {
+            reject(new Error('微信接口返回解析失败'));
+          }
+        });
+      }
+    );
+    req.on('error', reject);
+    req.write(data);
+    req.end();
+  });
+}
+
+/** access_token 进程内缓存（微信有效期 7200s，提前 5 分钟续期） */
+let tokenCache = { token: '', expireAt: 0 };
+
+async function getAccessToken(force = false) {
+  if (!force && tokenCache.token && Date.now() < tokenCache.expireAt) return tokenCache.token;
+  const res = await httpsGetJson(
+    `https://api.weixin.qq.com/cgi-bin/token?grant_type=client_credential&appid=${config.wx.appid}&secret=${config.wx.secret}`
+  );
+  if (!res.access_token) {
+    logger.warn('微信 access_token 获取失败:', res);
+    throw new Error(res.errmsg || '获取微信 access_token 失败');
+  }
+  tokenCache = {
+    token: res.access_token,
+    expireAt: Date.now() + (Number(res.expires_in || 7200) - 300) * 1000,
+  };
+  return tokenCache.token;
+}
+
+/**
+ * 发送小程序订阅消息
+ * @param {{openid:string, templateId:string, page:string, data:object, miniprogramState?:string}} param
+ * @returns 微信返回结果；errcode 0 为成功（43101=用户未订阅/已拒收，属正常情况）
+ */
+async function sendSubscribeMessage({ openid, templateId, page, data, miniprogramState }) {
+  if (config.wx.mock) {
+    logger.info(`[mock] 订阅消息跳过发送：template=${templateId} openid=${openid}`);
+    return { errcode: 0, errmsg: 'mock' };
+  }
+  const payload = {
+    touser: openid,
+    template_id: templateId,
+    page: page || '',
+    miniprogram_state: miniprogramState || 'formal',
+    lang: 'zh_CN',
+    data: data || {},
+  };
+  let res = await httpsPostJson(
+    `https://api.weixin.qq.com/cgi-bin/message/subscribe/send?access_token=${await getAccessToken()}`,
+    payload
+  );
+  // access_token 失效：强制刷新后重试一次
+  if (res && (res.errcode === 40001 || res.errcode === 42001)) {
+    res = await httpsPostJson(
+      `https://api.weixin.qq.com/cgi-bin/message/subscribe/send?access_token=${await getAccessToken(true)}`,
+      payload
+    );
+  }
+  if (!res || res.errcode !== 0) logger.warn('订阅消息发送失败:', res && res.errcode, res && res.errmsg);
+  return res;
+}
+
 /** 微信 code2session：MOCK 模式下用 code 派生 openid，便于本地联调 */
 async function code2session(code) {
   if (config.wx.mock) {
@@ -77,4 +156,4 @@ async function getPhoneNumber(code) {
   });
 }
 
-module.exports = { code2session, getPhoneNumber };
+module.exports = { code2session, getPhoneNumber, getAccessToken, sendSubscribeMessage };

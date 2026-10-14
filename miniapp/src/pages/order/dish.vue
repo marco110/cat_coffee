@@ -61,6 +61,14 @@
       </view>
     </view>
 
+    <!-- 数量：放在页面内，底部只保留一条购物车栏，避免两条操作栏叠着 -->
+    <view class="card group">
+      <view class="num-row">
+        <text class="num-label">购买数量</text>
+        <ct-qty :value="quantity" @change="onQtyChange" />
+      </view>
+    </view>
+
     <!-- 备注 -->
     <view class="card group">
       <view class="g-title"><text>备注</text></view>
@@ -84,43 +92,29 @@
       <text class="no-intro">店主还没有上传介绍图片~</text>
     </view>
 
-    <view class="foot-space" />
+    <!-- 底部只保留一条栏：左侧购物车（展开明细）+ 金额 + 加入购物车 / 去结算
+         商品详情为普通页面（非 tabBar），需自行补安全区 -->
+    <ct-cart-bar
+      :count="cart.count"
+      :amount="cart.goodsAmount"
+      bottom="calc(8rpx + env(safe-area-inset-bottom))"
+      @submit="goConfirm"
+      @toggle="panelVisible = !panelVisible"
+    />
 
-    <view class="footbar">
-      <ct-qty :value="quantity" @change="quantity = $event" />
-      <view class="add-btn" :class="{ disabled: soldOut }" @click="addToCart">
-        {{ soldOut ? '已售罄' : `加入购物车 ¥${price(unitTotal)}` }}
-      </view>
-    </view>
-
-    <ct-cart-bar :count="cart.count" :amount="cart.goodsAmount" @submit="goConfirm" @toggle="panelVisible = !panelVisible" />
-
-    <!-- 点单明细：点击购物车图标展开 -->
-    <view v-if="panelVisible && cart.count > 0" class="cart-mask" @click="panelVisible = false">
-      <view class="cart-panel" @click.stop>
-        <view class="cart-head">
-          <text>点单明细</text>
-          <text class="clear" @click="cart.clear()">清空</text>
-        </view>
-        <scroll-view class="cart-list" scroll-y>
-          <view v-for="it in cart.items" :key="it.key" class="cart-item">
-            <view class="ci-info">
-              <text class="ci-name">{{ it.name }}</text>
-              <text v-if="it.specText" class="ci-spec">{{ it.specText }}</text>
-            </view>
-            <text class="ci-price">¥{{ price((it.unitPrice + (it.addonAmount || 0)) * it.quantity) }}</text>
-            <ct-qty :value="it.quantity" @change="(v) => cart.setQuantity(it.key, v)" />
-          </view>
-        </scroll-view>
-      </view>
-    </view>
+    <!-- 点单明细：与点餐页共用同一个组件，样式完全一致 -->
+    <ct-cart-panel
+      :visible="panelVisible"
+      bottom="calc(108rpx + env(safe-area-inset-bottom))"
+      @close="panelVisible = false"
+    />
   </view>
 </template>
 
 <script setup>
 import { ref, computed } from 'vue';
 import { onLoad, onShareAppMessage, onShareTimeline } from '@dcloudio/uni-app';
-import { getDish } from '@/api/customer';
+import { getDish, getStore } from '@/api/customer';
 import { fixUrl } from '@/config';
 import { price } from '@/utils/format';
 import { useCartStore } from '@/store/cart';
@@ -128,6 +122,7 @@ import { useUserStore } from '@/store/user';
 import { DEFAULT_STORE_ID } from '@/utils/auth';
 import CtQty from '@/components/ct-qty.vue';
 import CtCartBar from '@/components/ct-cart-bar.vue';
+import CtCartPanel from '@/components/ct-cart-panel.vue';
 
 const cart = useCartStore();
 const userStore = useUserStore();
@@ -140,8 +135,19 @@ const addons = ref([]);
 const selected = ref({}); // groupId -> [itemId]
 const selectedAddons = ref([]);
 const remark = ref('');
-const quantity = ref(1);
 const panelVisible = ref(false);
+
+/** 门店休息中：businessStatus 明确为 0 才算休息（未加载到门店信息时不拦截） */
+const store = ref({});
+const storeClosed = computed(() => Number(store.value.businessStatus) === 0);
+
+async function loadStore() {
+  try {
+    store.value = await getStore(storeId.value);
+  } catch (e) {
+    /* 门店信息拿不到也不影响下单 */
+  }
+}
 
 const soldOut = computed(() => Number(dish.value.soldOut) === 1 || Number(dish.value.status) === 0);
 
@@ -170,6 +176,35 @@ const unitTotal = computed(() => {
     if (selectedAddons.value.includes(a.id)) total += Number(a.price || 0);
   });
   return Math.round(total * 100) / 100;
+});
+
+/** 当前勾选的规格项（顺序按分组展开，key 里再排序，与购物车一致） */
+const specItemIds = computed(() => {
+  const ids = [];
+  specGroups.value.forEach((g) => ids.push(...(selected.value[g.id] || [])));
+  return ids;
+});
+
+/**
+ * 当前「菜品 + 规格 + 加料 + 备注」在购物车里的行 key，
+ * 规则必须与 store/cart 的 makeKey 保持一致
+ */
+const currentKey = computed(() =>
+  [
+    String(dish.value.id || ''),
+    specItemIds.value.slice().sort().join('-'),
+    selectedAddons.value.slice().sort().join('-'),
+    remark.value || '',
+  ].join('|')
+);
+
+/**
+ * 数量完全由购物车反推：没加过就是 0（只显示「+」），
+ * 点「+」即加入购物车并变成「- 1」，点「-」减少，减到 0 自动移除该行
+ */
+const quantity = computed(() => {
+  const row = cart.items.find((i) => i.key === currentKey.value);
+  return row ? row.quantity : 0;
 });
 
 /** 分享内容：菜品名 + 价格，封面用菜品图 */
@@ -216,12 +251,12 @@ onLoad(async (opt) => {
   selected.value = {};
   selectedAddons.value = [];
   remark.value = '';
-  quantity.value = 1;
   specGroups.value.forEach((g) => {
     const def = g.items.filter((i) => i.isDefault).map((i) => i.id);
     if (def.length) selected.value[g.id] = g.multiSelect ? def : [def[0]];
   });
   if (detail.name) uni.setNavigationBarTitle({ title: detail.name });
+  loadStore();
 });
 
 function isSelected(g, id) {
@@ -245,28 +280,41 @@ function preview(url) {
   if (!urls.length) return;
   uni.previewImage({ current: fixUrl(url), urls });
 }
-function addToCart() {
-  if (soldOut.value) return;
+/** 数量步进：加号直接入购物车，减号减少（为 0 时移除该行） */
+function onQtyChange(v) {
+  if (v > quantity.value) addOne();
+  else cart.setQuantity(currentKey.value, v);
+}
+
+function addOne() {
+  if (soldOut.value) return uni.showToast({ title: '今日已售罄', icon: 'none' });
   const missing = specGroups.value.find((g) => g.isRequired && !(selected.value[g.id] || []).length);
   if (missing) {
+    // 数量由购物车反推，未加入时步进器会自己回到 0，无需回滚
     uni.showToast({ title: `请选择${missing.name}`, icon: 'none' });
     return;
   }
-  if (quantity.value < 1) quantity.value = 1;
-  const specItemIds = [];
-  specGroups.value.forEach((g) => specItemIds.push(...(selected.value[g.id] || [])));
   cart.add(dish.value, {
-    quantity: quantity.value,
-    specItemIds,
+    quantity: 1,
+    specItemIds: specItemIds.value,
     specText: specText.value,
     specExtra: Math.round((unitTotal.value - Number(dish.value.price || 0)) * 100) / 100,
     addons: addons.value.filter((a) => selectedAddons.value.includes(a.id)),
     remark: remark.value,
   });
-  uni.showToast({ title: '已加入购物车', icon: 'none' });
 }
-function goConfirm() {
+async function goConfirm() {
   if (!cart.count) return;
+  // 与点餐页一致：门店休息中不允许下单
+  await loadStore();
+  if (storeClosed.value) {
+    return uni.showModal({
+      title: '门店休息中',
+      content: `「${store.value.name || '本店'}」正在休息，暂不可下单，请稍后再来～`,
+      showCancel: false,
+      confirmText: '我知道了',
+    });
+  }
   const orderType = userStore.orderType || 'TAKEAWAY';
   const tableId = orderType === 'DINE_IN' ? userStore.tableId || '' : '';
   const tableNo = orderType === 'DINE_IN' ? userStore.tableNo || '' : '';
@@ -279,7 +327,8 @@ function goConfirm() {
 <style lang="scss" scoped>
 .page {
   min-height: 100vh;
-  padding: 0 24rpx 320rpx;
+  /* 底部仅一条购物车栏（100rpx + 安全区），留足不遮挡即可 */
+  padding: 0 24rpx 200rpx;
   background: $bg-page;
 }
 .gallery {
@@ -420,6 +469,16 @@ function goConfirm() {
     }
   }
 }
+.num-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.num-label {
+  font-size: 28rpx;
+  font-weight: 600;
+  color: $text-primary;
+}
 .remark {
   margin-top: 16rpx;
   background: $cream-white;
@@ -446,104 +505,5 @@ function goConfirm() {
 .no-intro {
   font-size: 24rpx;
   color: $text-placeholder;
-}
-.foot-space {
-  height: 40rpx;
-}
-.footbar {
-  position: fixed;
-  left: 24rpx;
-  right: 24rpx;
-  bottom: calc(140rpx + env(safe-area-inset-bottom));
-  height: 96rpx;
-  background: #fff;
-  border-radius: 48rpx;
-  box-shadow: $shadow-pop;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 20rpx 0 28rpx;
-  z-index: 901;
-}
-.add-btn {
-  height: 76rpx;
-  padding: 0 40rpx;
-  border-radius: 38rpx;
-  background: $grad-brand;
-  color: #fff;
-  font-size: 30rpx;
-  font-weight: 600;
-  display: flex;
-  align-items: center;
-  &.disabled {
-    background: #d9c3cd;
-  }
-}
-/* 点单明细面板 */
-.cart-mask {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.45);
-  z-index: 950;
-  display: flex;
-  align-items: flex-end;
-}
-.cart-panel {
-  width: 100%;
-  max-height: 60vh;
-  background: #fff;
-  border-radius: 24rpx 24rpx 0 0;
-  display: flex;
-  flex-direction: column;
-}
-.cart-head {
-  padding: 24rpx 28rpx;
-  display: flex;
-  justify-content: space-between;
-  border-bottom: 1rpx solid $border-color;
-  font-size: 30rpx;
-  font-weight: 600;
-  .clear {
-    color: $text-secondary;
-    font-size: 26rpx;
-    font-weight: 400;
-  }
-}
-.cart-list {
-  max-height: 50vh;
-  padding: 0 28rpx;
-  box-sizing: border-box;
-}
-.cart-item {
-  display: flex;
-  align-items: center;
-  padding: 24rpx 0;
-  border-bottom: 1rpx dashed $border-color;
-}
-.ci-info {
-  flex: 1;
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-}
-.ci-name {
-  font-size: 28rpx;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.ci-spec {
-  margin-top: 6rpx;
-  font-size: 22rpx;
-  color: $text-secondary;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.ci-price {
-  flex-shrink: 0;
-  margin: 0 24rpx;
-  color: $coffee-brown;
-  font-weight: 600;
 }
 </style>

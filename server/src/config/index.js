@@ -30,6 +30,15 @@ module.exports = {
     secret: process.env.WX_SECRET || '',
     // 未配置 appid/secret 或显式开启时使用 MOCK：openid 由 code 派生，手机号由 code 派生
     mock: process.env.WX_MOCK === 'true' || !process.env.WX_APPID || !process.env.WX_SECRET,
+    // 订阅消息模板（小程序后台「订阅消息」里申请后填入）
+    subscribe: {
+      // 取餐提醒（模板编号 1820）
+      pickup: process.env.WX_TMPL_PICKUP || 'd-p-AMhDOre-7T-Yo0_LyAXuQBLIUdq19_0-oH9gqmg',
+      // 跳转版本：formal 正式版 / trial 体验版 / developer 开发版
+      state: process.env.WX_MINIPROGRAM_STATE || 'formal',
+      // 消息内跳转的详情页路径
+      page: process.env.WX_SUBSCRIBE_PAGE || 'pages/order/detail',
+    },
   },
   upload: {
     dir: path.resolve(__dirname, '..', '..', process.env.UPLOAD_DIR || 'uploads'),

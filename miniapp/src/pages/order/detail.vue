@@ -3,8 +3,6 @@
     <view class="status-card">
       <view class="s-main">
         <text class="s-text">{{ order.statusText }}</text>
-        <ct-status-tag :status="order.status" />
-        <ct-status-tag :status="order.payStatus" />
       </view>
       <text class="s-tip">{{ statusTip }}</text>
       <view v-if="order.pickupCode" class="code-box">
@@ -89,6 +87,7 @@ import { ref, computed } from 'vue';
 import { onLoad, onShow, onUnload } from '@dcloudio/uni-app';
 import { getOrderDetail, cancelOrder, urgeOrder, reorder } from '@/api/customer';
 import { fixUrl } from '@/config';
+import { requestPickupSubscribe } from '@/config/subscribe';
 import { price } from '@/utils/format';
 import { useCartStore } from '@/store/cart';
 import { useUserStore } from '@/store/user';
@@ -119,6 +118,17 @@ const storePhone = computed(() => order.value.storePhone || '');
 onLoad(async (opt) => {
   orderId.value = opt.id;
   await load();
+  // 下单成功后跳转到本页时申请订阅授权：出品完成后可收到「取餐提醒」
+  if (opt.subscribe === '1') {
+    setTimeout(() => {
+      requestPickupSubscribe((accepted) => {
+        uni.showToast({
+          title: accepted ? '订阅成功，出品完成后通知你取餐' : '未订阅，可在订单页查看取餐进度',
+          icon: 'none',
+        });
+      });
+    }, 300);
+  }
 });
 onShow(() => {
   if (!orderId.value) return;

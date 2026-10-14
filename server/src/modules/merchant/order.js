@@ -9,6 +9,7 @@ const { nowSql, waitedMinutes, rangeToSql } = require('../../utils/time');
 const { sid, maskPhone } = require('../../utils/misc');
 const orderService = require('../../services/order');
 const { operationLog } = require('../../services/log');
+const { notifyPickup } = require('../../services/notify');
 
 const router = express.Router();
 
@@ -241,6 +242,10 @@ Object.entries(ACTIONS).forEach(([path, cfg]) => {
         description: `${cfg.text}：订单 ${req.params.orderId}`,
         targetId: req.params.orderId,
       });
+      // 出品完成：给顾客发「取餐提醒」订阅消息（异步，失败不影响状态流转）
+      if (cfg.action === 'READY') {
+        notifyPickup({ orderId: req.params.orderId }).catch(() => {});
+      }
       return ok(res, { status: r.status, ...pickStatusTime(r) }, `${cfg.text}成功`);
     })
   );

@@ -44,9 +44,9 @@ function adjust(m, type) {
   const current = type === 'POINTS' ? m.points : m.growth;
   uni.showModal({
     title,
-    content: `当前：${current}，输入变更值（可填负数）`,
+    // content: `当前：${current}，输入变更值（可填负数）`,
     editable: true,
-    placeholderText: '如 100 或 -50',
+    placeholderText: `当前：${current}，输入变更值（可填负数）`,
     success: async (r) => {
       if (!r.confirm) return;
       const num = Number(r.content);

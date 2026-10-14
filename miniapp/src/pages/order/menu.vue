@@ -10,6 +10,15 @@
       </view>
     </view>
 
+    <!-- 门店休息中：顶部提示 + 结算拦截 -->
+    <view v-if="storeClosed" class="closed-tip">
+      <text class="ct-icon">😴</text>
+      <view class="ct-info">
+        <text class="ct-title">门店休息中，暂不可下单</text>
+        <text class="ct-sub">营业时间 {{ store.businessHours || '请咨询门店' }}</text>
+      </view>
+    </view>
+
     <view class="body">
       <scroll-view class="cats" scroll-y>
         <view
@@ -51,47 +60,8 @@
 
     <ct-cart-bar :count="cart.count" :amount="cart.goodsAmount" @submit="goConfirm" @toggle="panelVisible = !panelVisible" />
 
-    <!-- 购物车明细 -->
-    <view v-if="panelVisible && cart.count > 0" class="cart-mask" @click="panelVisible = false">
-      <view class="cart-panel" @click.stop>
-        <view class="panel-handle" />
-        <view class="cart-head">
-          <text class="ch-title">已选 {{ cart.count }} 件</text>
-          <text class="clear" @click="cart.clear()">🗑 清空</text>
-        </view>
-        <scroll-view class="cart-list" scroll-y>
-          <view v-for="it in cart.items" :key="it.key" class="cart-item">
-            <view class="ci-cover">
-              <image v-if="it.cover" class="ci-img" :src="fixUrl(it.cover)" mode="aspectFill" />
-              <ct-kitty v-else class="ci-ph" mode="face" :size="56" color="#ffd0e0" bow-color="#ffd84d" />
-            </view>
-            <view class="ci-info">
-              <view class="ci-row">
-                <text class="ci-name">{{ it.name }}</text>
-                <text class="ci-price">¥{{ price((it.unitPrice + (it.addonAmount || 0)) * it.quantity) }}</text>
-              </view>
-              <view v-if="it.specText || it.remark" class="ci-tags">
-                <text v-if="it.specText" class="ci-tag">{{ it.specText }}</text>
-                <text v-if="it.remark" class="ci-tag remark">备注 {{ it.remark }}</text>
-              </view>
-              <text v-if="it.desc" class="ci-desc">{{ it.desc }}</text>
-              <view class="ci-row ci-foot">
-                <text class="ci-unit">¥{{ price(it.unitPrice + (it.addonAmount || 0)) }} / 份</text>
-                <ct-qty :value="it.quantity" @change="(v) => cart.setQuantity(it.key, v)" />
-              </view>
-            </view>
-          </view>
-          <view class="list-bottom" />
-        </scroll-view>
-        <view class="cart-foot">
-          <view class="cf-left">
-            <text class="cf-label">合计</text>
-            <text class="cf-price">¥{{ price(cart.goodsAmount) }}</text>
-          </view>
-          <view class="cf-btn" @click="goConfirm">去结算</view>
-        </view>
-      </view>
-    </view>
+    <!-- 点单明细（与商品详情页共用同一组件） -->
+    <ct-cart-panel :visible="panelVisible" @close="panelVisible = false" />
 
 
   </view>
@@ -109,6 +79,7 @@ import { DEFAULT_STORE_ID, ensureLogin } from '@/utils/auth';
 import CtDishItem from '@/components/ct-dish-item.vue';
 import CtQty from '@/components/ct-qty.vue';
 import CtCartBar from '@/components/ct-cart-bar.vue';
+import CtCartPanel from '@/components/ct-cart-panel.vue';
 import CtKitty from '@/components/ct-kitty.vue';
 
 const cart = useCartStore();
@@ -125,6 +96,9 @@ const searching = ref(false);
 
 const panelVisible = ref(false);
 
+/** 休息中：businessStatus 明确为 0 才算休息（未加载到门店信息时不拦截） */
+const storeClosed = computed(() => Number(store.value.businessStatus) === 0);
+
 onLoad(async (opt) => {
   await ensureLogin();
   // 从分享链接进来时以链接里的门店为准，好友可能先于自己到过别家门店
@@ -140,6 +114,7 @@ onLoad(async (opt) => {
 /** tabBar 页面只在首次进入时触发 onLoad，切回来时同步最新状态 */
 onShow(async () => {
   if (!storeId.value) return; // onLoad 尚未执行完
+  loadStore(); // 回到点餐页时刷新营业状态，避免用旧状态放行下单
   const sid = userStore.storeId;
   if (sid && sid !== storeId.value) {
     storeId.value = sid;
@@ -229,8 +204,18 @@ function openDish(dish) {
   if (Number(dish.soldOut) === 1) return uni.showToast({ title: '今日已售罄', icon: 'none' });
   uni.navigateTo({ url: `/pages/order/dish?id=${dish.id}&storeId=${storeId.value}` });
 }
-function goConfirm() {
+async function goConfirm() {
   if (!cart.count) return;
+  // 以服务端最新营业状态为准，避免店主刚打烊、本地还是「营业中」
+  await loadStore();
+  if (storeClosed.value) {
+    return uni.showModal({
+      title: '门店休息中',
+      content: `「${store.value.name || '本店'}」正在休息，暂不可下单，请稍后再来～`,
+      showCancel: false,
+      confirmText: '我知道了',
+    });
+  }
   uni.navigateTo({ url: `/pages/order/confirm?storeId=${storeId.value}&orderType=TAKEAWAY` });
 }
 </script>
@@ -241,6 +226,34 @@ function goConfirm() {
   display: flex;
   flex-direction: column;
   background: $bg-page;
+}
+/* 门店休息中提示条 */
+.closed-tip {
+  margin: 0 24rpx 16rpx;
+  padding: 18rpx 24rpx;
+  display: flex;
+  align-items: center;
+  border-radius: 20rpx;
+  background: #fff4d6;
+  border: 2rpx solid #ffe4a3;
+  .ct-icon {
+    margin-right: 16rpx;
+    font-size: 40rpx;
+  }
+  .ct-info {
+    display: flex;
+    flex-direction: column;
+  }
+  .ct-title {
+    font-size: 26rpx;
+    font-weight: 600;
+    color: #8a5a2b;
+  }
+  .ct-sub {
+    margin-top: 4rpx;
+    font-size: 22rpx;
+    color: #b08a5c;
+  }
 }
 .topbar {
   padding: 16rpx 24rpx;
@@ -338,191 +351,5 @@ function goConfirm() {
 }
 .bottom-space {
   height: 160rpx;
-}
-/* 面板整体抬到购物车栏上方：
-   购物车栏本身 bottom 24rpx + 高 100rpx，其购物车图标还向上探出 32rpx，
-   故预留 176rpx 让面板底边与图标顶部留出间隙，
-   z-index 低于购物车栏(900)，保证面板展开时购物车栏仍可见可点 */
-.cart-mask {
-  position: fixed;
-  inset: 0;
-  padding-bottom: calc(176rpx + env(safe-area-inset-bottom));
-  box-sizing: border-box;
-  background: rgba(0, 0, 0, 0.45);
-  z-index: 850;
-  display: flex;
-  align-items: flex-end;
-}
-.cart-panel {
-  width: 100%;
-  max-height: calc(100vh - 280rpx);
-  background: #fff;
-  border-radius: 28rpx 28rpx 0 0;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-  box-shadow: 0 -8rpx 40rpx rgba(240, 72, 128, 0.18);
-  animation: sheet-up 0.22s ease-out;
-}
-@keyframes sheet-up {
-  from {
-    transform: translateY(40rpx);
-    opacity: 0.6;
-  }
-  to {
-    transform: translateY(0);
-    opacity: 1;
-  }
-}
-.panel-handle {
-  align-self: center;
-  margin-top: 12rpx;
-  width: 72rpx;
-  height: 8rpx;
-  border-radius: 4rpx;
-  background: $border-color;
-}
-.cart-head {
-  padding: 18rpx 28rpx;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  border-bottom: 1rpx solid $border-color;
-  .ch-title {
-    font-size: 30rpx;
-    font-weight: 700;
-    color: $text-primary;
-  }
-  .clear {
-    color: $text-secondary;
-    font-size: 26rpx;
-  }
-}
-.cart-list {
-  flex: 1;
-  padding: 0 28rpx;
-  box-sizing: border-box;
-}
-.cart-item {
-  display: flex;
-  padding: 24rpx 0;
-  border-bottom: 1rpx dashed $border-color;
-}
-.ci-cover {
-  flex-shrink: 0;
-  width: 120rpx;
-  height: 120rpx;
-  border-radius: 16rpx;
-  overflow: hidden;
-  background: $cream-white;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-.ci-img {
-  width: 120rpx;
-  height: 120rpx;
-}
-.ci-ph {
-  opacity: 0.9;
-}
-/* min-width: 0 让菜名区域可压缩，避免长菜名 + 规格把整行撑出屏幕 */
-.ci-info {
-  flex: 1;
-  min-width: 0;
-  margin-left: 20rpx;
-  display: flex;
-  flex-direction: column;
-}
-.ci-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-.ci-name {
-  flex: 1;
-  min-width: 0;
-  font-size: 28rpx;
-  font-weight: 600;
-  color: $text-primary;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.ci-price {
-  flex-shrink: 0;
-  margin-left: 16rpx;
-  color: $pink-dark;
-  font-size: 30rpx;
-  font-weight: 700;
-}
-.ci-tags {
-  margin-top: 8rpx;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8rpx;
-}
-.ci-tag {
-  padding: 4rpx 14rpx;
-  border-radius: $radius-tag;
-  background: $pink-soft;
-  color: $pink-dark;
-  font-size: 20rpx;
-  &.remark {
-    background: #fff4e0;
-    color: #c98a2b;
-  }
-}
-.ci-desc {
-  margin-top: 8rpx;
-  font-size: 22rpx;
-  color: $text-secondary;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.ci-foot {
-  margin-top: 10rpx;
-}
-.ci-unit {
-  font-size: 22rpx;
-  color: $text-placeholder;
-}
-.list-bottom {
-  height: 16rpx;
-}
-.cart-foot {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 18rpx 28rpx calc(18rpx + env(safe-area-inset-bottom));
-  border-top: 1rpx solid $border-color;
-  background: #fff;
-  .cf-left {
-    display: flex;
-    align-items: baseline;
-  }
-  .cf-label {
-    font-size: 24rpx;
-    color: $text-secondary;
-  }
-  .cf-price {
-    margin-left: 8rpx;
-    font-size: 36rpx;
-    font-weight: 800;
-    color: $pink-dark;
-  }
-  .cf-btn {
-    height: 76rpx;
-    padding: 0 48rpx;
-    border-radius: 38rpx;
-    background: $grad-brand;
-    color: #fff;
-    font-size: 30rpx;
-    font-weight: 600;
-    display: flex;
-    align-items: center;
-    box-shadow: 0 8rpx 20rpx rgba(255, 111, 165, 0.35);
-  }
 }
 </style>
