@@ -149,18 +149,8 @@ onLoad(async (opt) => {
   orderId.value = opt.id;
   subscribed.value = !!uni.getStorageSync(`pickup_subscribe_${opt.id}`);
   await load();
-  // 下单成功刚跳过来：用弹窗提示一次，用户点「订阅」才发起授权（点击手势 -> 订阅弹窗）
-  if (opt.subscribe === '1' && canSubscribe.value && !subscribed.value) {
-    uni.showModal({
-      title: '开启取餐提醒',
-      content: '出品完成后，微信会通知你取餐码，要不要开启？',
-      confirmText: '开启提醒',
-      cancelText: '暂不',
-      success: (r) => {
-        if (r.confirm) onSubscribeClick();
-      },
-    });
-  }
+  // 订阅提醒已整合进「提交订单」流程：下单成功后由结算页直接弹原生订阅窗，
+  // 这里只保留卡片内的可点入口，作为未订阅时的兜底（随时可点）
 });
 onShow(() => {
   if (!orderId.value) return;

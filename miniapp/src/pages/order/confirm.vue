@@ -98,9 +98,10 @@
 
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue';
-import { onLoad } from '@dcloudio/uni-app';
+import { onLoad, onShow } from '@dcloudio/uni-app';
 import { previewOrder, createOrder, getMemberInfo, getAvailableCoupons, getStore } from '@/api/customer';
 import { fixUrl } from '@/config';
+import { requestPickupSubscribe } from '@/config/subscribe';
 import { price, discountText, dateText } from '@/utils/format';
 import { useCartStore } from '@/store/cart';
 import { useUserStore } from '@/store/user';
@@ -148,6 +149,12 @@ onLoad(async (opt) => {
   await loadStore();
 });
 
+onShow(() => {
+  // 每次回到结算页刷新营业状态（不 await，避免影响提交时的订阅手势）；
+  // 提交仍由服务端 STORE_CLOSED 兜底拦截，所以这里是「尽量新鲜」而非强一致
+  if (storeId.value) loadStore();
+});
+
 onMounted(() => {
   if (!storeId.value) storeId.value = userStore.storeId;
 });
@@ -193,8 +200,7 @@ function pickCoupon(c) {
 async function submit() {
   if (submitting.value) return;
   if (!cart.count) return uni.showToast({ title: '购物车为空', icon: 'none' });
-  // 以服务端最新营业状态为准：停留期间店主可能已打烊
-  await loadStore();
+  // 用 onLoad/onShow 已加载的营业状态判断（同步，不在此 await，避免破坏订阅手势）
   if (storeClosed.value) {
     return uni.showModal({
       title: '门店休息中',
@@ -203,6 +209,11 @@ async function submit() {
       confirmText: '我知道了',
     });
   }
+  // 订阅提醒必须在「用户点击手势的同步调用链」里发起 —— 务必在任何 await 之前，
+  // 否则微信会判定不在手势内而不弹窗（与 setTimeout 一样的坑）
+  const subDone = new Promise((resolve) => {
+    requestPickupSubscribe(() => resolve());
+  });
   submitting.value = true;
   try {
     const res = await createOrder({
@@ -214,9 +225,10 @@ async function submit() {
     });
     cart.clear();
     uni.showToast({ title: res.tip || '下单成功', icon: 'none' });
+    // 订单成功提交后：等订阅弹窗处理完，再跳转详情页
+    await subDone;
     setTimeout(() => {
-      // subscribe=1：到详情页后再弹订阅授权，避免跳转把授权弹窗打断
-      uni.redirectTo({ url: `/pages/order/detail?id=${res.orderId}&subscribe=1` });
+      uni.redirectTo({ url: `/pages/order/detail?id=${res.orderId}` });
     }, 600);
   } catch (e) {
     uni.showToast({ title: e.msg || '下单失败', icon: 'none' });

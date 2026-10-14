@@ -5,6 +5,14 @@ const path = require('path');
 const serverRoot = path.resolve(__dirname, '..', '..');
 const runMode = String(process.env.RUN_MODE || 'development').toLowerCase();
 
+/** 把逗号/分号/空白分隔的多 token 字符串解析成数组，兼容单个 token */
+function parseTokens(str) {
+  return String(str || '')
+    .split(/[,;\s]+/)
+    .map((s) => s.trim())
+    .filter(Boolean);
+}
+
 module.exports = {
   // development | production
   runMode,
@@ -60,10 +68,16 @@ module.exports = {
   storeUser: {
     defaultPassword: process.env.STORE_USER_DEFAULT_PASSWORD || 'aimao2026',
   },
-  // PushPlus 消息推送（新订单通知店主）：改用自己的账号时替换 token 即可
+  // PushPlus 消息推送（新订单通知店主）：支持多个接收账号
+  // 配置方式（二选一，前者优先）：
+  //   1. PUSHPLUS_TOKENS=a,b,c   多个 token 用逗号/分号/空白分隔，逐个一对一推送
+  //   2. PUSHPLUS_TOKEN=xxx      兼容旧的单个 token
+  //   3. 群组推送：填 PUSHPLUS_TOPIC=群组编码，此时只需 tokens 中任一有效 token 即可
   pushplus: {
     enabled: process.env.PUSHPLUS_ENABLED !== 'false',
-    token: process.env.PUSHPLUS_TOKEN || '9a6a1d4b64bd405fa14d8eaf3adc1b77',
+    tokens: parseTokens(
+      process.env.PUSHPLUS_TOKENS || process.env.PUSHPLUS_TOKEN || '9a6a1d4b64bd405fa14d8eaf3adc1b77'
+    ),
     // 一对一推送留空；群组/topic 推送填群组编码
     topic: process.env.PUSHPLUS_TOPIC || '',
     api: process.env.PUSHPLUS_API || 'https://www.pushplus.plus/send',
