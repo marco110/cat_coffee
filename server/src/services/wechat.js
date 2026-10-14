@@ -97,7 +97,17 @@ async function sendSubscribeMessage({ openid, templateId, page, data, miniprogra
       payload
     );
   }
-  if (!res || res.errcode !== 0) logger.warn('订阅消息发送失败:', res && res.errcode, res && res.errmsg);
+  if (!res || res.errcode !== 0) {
+    const code = res && res.errcode;
+    let hint = '';
+    // 43101：用户未订阅 / 已拒收 / 一次性额度已用尽 / 订阅版本与下发版本不一致
+    if (code === 43101) hint = '（检查：用户是否点过「允许」、订阅版本与 miniprogram_state 是否一致、一次性额度是否已用掉）';
+    else if (code === 47001) hint = '（模板字段超长或类型不符）';
+    else if (code === 40003) hint = '（openid 无效或不属于该小程序）';
+    logger.warn('订阅消息发送失败:', code, res && res.errmsg, hint);
+  } else {
+    logger.info(`订阅消息发送成功：template=${templateId} state=${miniprogramState || 'formal'}`);
+  }
   return res;
 }
 

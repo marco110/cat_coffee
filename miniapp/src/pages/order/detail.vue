@@ -13,6 +13,15 @@
         <text class="code-label">桌号</text>
         <text class="code">{{ order.tableNo }}</text>
       </view>
+      <!-- 取餐提醒入口：微信要求订阅必须由用户点击触发，故放在可点区域里 -->
+      <view v-if="canSubscribe && !subscribed" class="sub-tip" @click="onSubscribeClick">
+        <text class="st-icon">🔔</text>
+        <view class="st-info">
+          <text class="st-title">开启取餐提醒</text>
+          <text class="st-sub">出品完成后，微信通知你取餐码</text>
+        </view>
+        <view class="st-btn">订阅</view>
+      </view>
     </view>
 
     <view v-if="order.modifyNotice" class="modify-notice">
@@ -115,19 +124,42 @@ const statusTip = computed(() => {
 });
 const storePhone = computed(() => order.value.storePhone || '');
 
+/** 未完成的订单才需要取餐提醒 */
+const canSubscribe = computed(() => !['COMPLETED', 'CANCELLED', 'REJECTED'].includes(order.value.status));
+
+/** 本单是否已订阅过（本地标记，避免重复打扰） */
+const subscribed = ref(false);
+
+/** 订阅入口：必须在 tap 的同步调用链里请求，否则微信会直接 fail */
+function onSubscribeClick() {
+  requestPickupSubscribe((accepted, raw) => {
+    if (!accepted) {
+      return uni.showToast({
+        title: raw && raw.reason === 'filter' ? '已订阅过，无需重复订阅' : '未订阅，可随时点这里再试',
+        icon: 'none',
+      });
+    }
+    subscribed.value = true;
+    uni.setStorageSync(`pickup_subscribe_${orderId.value}`, 1);
+    uni.showToast({ title: '订阅成功，出品完成后通知你取餐', icon: 'none' });
+  });
+}
+
 onLoad(async (opt) => {
   orderId.value = opt.id;
+  subscribed.value = !!uni.getStorageSync(`pickup_subscribe_${opt.id}`);
   await load();
-  // 下单成功后跳转到本页时申请订阅授权：出品完成后可收到「取餐提醒」
-  if (opt.subscribe === '1') {
-    setTimeout(() => {
-      requestPickupSubscribe((accepted) => {
-        uni.showToast({
-          title: accepted ? '订阅成功，出品完成后通知你取餐' : '未订阅，可在订单页查看取餐进度',
-          icon: 'none',
-        });
-      });
-    }, 300);
+  // 下单成功刚跳过来：用弹窗提示一次，用户点「订阅」才发起授权（点击手势 -> 订阅弹窗）
+  if (opt.subscribe === '1' && canSubscribe.value && !subscribed.value) {
+    uni.showModal({
+      title: '开启取餐提醒',
+      content: '出品完成后，微信会通知你取餐码，要不要开启？',
+      confirmText: '开启提醒',
+      cancelText: '暂不',
+      success: (r) => {
+        if (r.confirm) onSubscribeClick();
+      },
+    });
   }
 });
 onShow(() => {
@@ -220,6 +252,44 @@ function callStore() {
   font-size: 48rpx;
   font-weight: 700;
   letter-spacing: 4rpx;
+}
+/* 取餐提醒订阅入口 */
+.sub-tip {
+  margin-top: 24rpx;
+  padding: 18rpx 20rpx;
+  display: flex;
+  align-items: center;
+  border-radius: 16rpx;
+  background: rgba(255, 255, 255, 0.22);
+  .st-icon {
+    margin-right: 16rpx;
+    font-size: 36rpx;
+  }
+  .st-info {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+  }
+  .st-title {
+    font-size: 26rpx;
+    font-weight: 600;
+  }
+  .st-sub {
+    margin-top: 4rpx;
+    font-size: 22rpx;
+    opacity: 0.8;
+  }
+  .st-btn {
+    flex-shrink: 0;
+    margin-left: 16rpx;
+    padding: 10rpx 24rpx;
+    border-radius: 26rpx;
+    background: #fff;
+    color: $pink-dark;
+    font-size: 24rpx;
+    font-weight: 600;
+  }
 }
 .modify-notice {
   margin-top: 20rpx;
