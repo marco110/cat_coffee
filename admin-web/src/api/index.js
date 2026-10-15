@@ -1,6 +1,7 @@
 import axios from 'axios';
 import { ElMessage } from 'element-plus';
 import router from '@/router';
+import { useUserStore } from '@/store/user';
 
 const service = axios.create({
   baseURL: '/api/admin',
@@ -18,15 +19,37 @@ service.interceptors.response.use(
     const body = res.data || {};
     if (body.code === 0) return body.data;
     if (body.code === 401) {
+      // 关键：必须同步清空 Pinia 用户态，否则路由守卫会因 isLogin 仍为 true
+      // 把 /login 再弹回 /dashboard，导致「只提示过期却不跳转登录页」
+      const hadToken = localStorage.getItem('cc_admin_token');
       localStorage.removeItem('cc_admin_token');
       localStorage.removeItem('cc_admin_user');
-      router.push('/login');
+      useUserStore().logout();
+      // 只在首次（仍有 token 时）提示并跳转，避免并发请求重复弹窗
+      if (hadToken) {
+        ElMessage.error(body.msg || '登录已过期，请重新登录');
+        router.push('/login');
+      }
+      return Promise.reject(new Error(body.msg || '登录已过期'));
     }
     ElMessage.error(body.msg || '请求失败');
     return Promise.reject(new Error(body.msg || '请求失败'));
   },
   (err) => {
-    ElMessage.error(err.message || '网络异常');
+    // HTTP 层异常（网络/超时/连接被拒）：若响应里带了 401 业务码也按上述逻辑处理
+    const body = err.response && err.response.data;
+    if (body && body.code === 401) {
+      const hadToken = localStorage.getItem('cc_admin_token');
+      localStorage.removeItem('cc_admin_token');
+      localStorage.removeItem('cc_admin_user');
+      useUserStore().logout();
+      if (hadToken) {
+        ElMessage.error(body.msg || '登录已过期，请重新登录');
+        router.push('/login');
+      }
+    } else {
+      ElMessage.error(err.message || '网络异常');
+    }
     return Promise.reject(err);
   }
 );
