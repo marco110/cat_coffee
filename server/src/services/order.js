@@ -399,6 +399,7 @@ async function createOrder({ userId, storeId, body }) {
       tableNo: table ? table.table_no : null,
       pickupCode,
       payAmount: toYuan(c.pay),
+      remark: body.remark || '',
       status,
       payStatus: 'UNPAID',
       tip,
