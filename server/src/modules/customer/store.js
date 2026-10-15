@@ -127,8 +127,10 @@ router.get(
     );
     const result = categories.map((c) => {
       let list = dishes.filter((d) => String(d.category_id) === String(c.id));
+      // 售罄商品：按门店「展示售罄商品」开关决定是否隐藏
       if (Number(store.show_sold_out_dish) !== 1) list = list.filter((d) => Number(d.sold_out) !== 1);
-      list = list.filter((d) => Number(d.status) === 1 || Number(store.show_sold_out_dish) === 1);
+      // 已下架（status=0）商品对顾客永远不可见，与上面开关无关
+      list = list.filter((d) => Number(d.status) === 1);
       return {
         id: String(c.id),
         name: c.name,
