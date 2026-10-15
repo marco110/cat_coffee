@@ -82,6 +82,7 @@ import { onShow, onUnload } from '@dcloudio/uni-app';
 import { overview as apiOverview, pendingCount, todo as apiTodo, updateBusinessStatus } from '@/api/merchant';
 import { price } from '@/utils/format';
 import { useUserStore } from '@/store/user';
+import { ensureMerchant } from '@/utils/merchant-auth';
 import CtKitty from '@/components/ct-kitty.vue';
 
 const userStore = useUserStore();
@@ -94,9 +95,17 @@ const storeName = computed(() => userStore.merchantStore?.name || '我的门店'
 const businessStatus = computed(() => userStore.merchantStore?.businessStatus ?? 1);
 
 async function load() {
+  // 凭 openid 自动识别身份（无需密码、无需处理过期）；识别失败再回登录页
   if (!userStore.isMerchantLogin) {
-    uni.redirectTo({ url: '/subpackages/merchant/login/index' });
-    return;
+    const s = await ensureMerchant();
+    if (s === 'removed') {
+      uni.redirectTo({ url: '/pages/merchant-entry/index' });
+      return;
+    }
+    if (s !== 'ok') {
+      uni.redirectTo({ url: '/subpackages/merchant/login/index' });
+      return;
+    }
   }
   try {
     const [o, t, p] = await Promise.all([apiOverview(), apiTodo(), pendingCount()]);

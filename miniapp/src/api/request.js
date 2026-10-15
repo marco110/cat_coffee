@@ -38,11 +38,15 @@ export function request(opt) {
         if (loading) uni.hideLoading();
         const body = res.data || {};
         if (body.code === 0) return resolve(body.data);
-        // 登录失效
+        // 登录失效：顾客端提示并清态；店主端静默回到入口页，由 openid 自动重识别（无需手动处理过期）
         if (body.code === 401) {
-          if (auth === 'merchant') useUserStore().clearMerchant();
-          else useUserStore().clear();
-          uni.showToast({ title: '登录已失效', icon: 'none' });
+          if (auth === 'merchant') {
+            useUserStore().clearMerchant();
+            uni.redirectTo({ url: '/pages/merchant-entry/index' });
+          } else {
+            useUserStore().clear();
+            uni.showToast({ title: '登录已失效', icon: 'none' });
+          }
         }
         return reject(new ApiError(body.code, body.msg || '请求失败', body.data));
       },

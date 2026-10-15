@@ -5,11 +5,16 @@
       <text class="h-sub">接单、改单、管菜单、看经营数据</text>
     </view>
 
-    <view v-if="userStore.isMerchantLogin" class="card info">
+    <view v-if="status === 'ok' && userStore.isMerchantLogin" class="card info">
       <text class="store">{{ userStore.merchantStore?.name }}</text>
       <text class="who">{{ userStore.merchantInfo?.realName }}（{{ roleText }}）</text>
       <view class="btn" @click="go('/subpackages/merchant/dashboard/index')">进入工作台</view>
       <view class="btn ghost" @click="logout">退出登录</view>
+    </view>
+    <view v-else-if="status === 'removed'" class="card info">
+      <text class="store warn">账号已失效</text>
+      <text class="tip">您已不是店主/店员，请联系管理员处理</text>
+      <view class="btn ghost" @click="logout">清除本地记录</view>
     </view>
     <view v-else class="card info">
       <text class="tip">请使用超管为您开通的手机号登录</text>
@@ -26,22 +31,32 @@
 </template>
 
 <script setup>
-import { computed } from 'vue';
+import { ref, computed } from 'vue';
 import { onShow } from '@dcloudio/uni-app';
 import { useUserStore } from '@/store/user';
+import { ensureMerchant } from '@/utils/merchant-auth';
 
 const userStore = useUserStore();
+// 'init' | 'ok' | 'none' | 'removed'
+const status = ref('init');
 const roleText = computed(() => ({ OWNER: '店主', STAFF: '店员' }[userStore.merchantInfo?.role] || ''));
 
-onShow(() => {
+onShow(async () => {
   userStore.restore();
+  // 已登录直接进；否则凭 openid 自动识别（无需密码、无需处理过期）
+  if (userStore.isMerchantLogin) {
+    status.value = 'ok';
+  } else {
+    status.value = await ensureMerchant();
+  }
 });
 function go(url) {
   uni.navigateTo({ url });
 }
 function logout() {
   userStore.clearMerchant();
-  uni.showToast({ title: '已退出', icon: 'none' });
+  status.value = 'none';
+  uni.showToast({ title: '已清除', icon: 'none' });
 }
 </script>
 

@@ -77,9 +77,10 @@ const customerAuth = [jwtAuth, requireType('CUSTOMER')];
 const merchantAuth = [jwtAuth, requireType('MERCHANT'), wrap(storeScope)];
 const adminAuth = [jwtAuth, requireType('ADMIN'), wrap(adminScope)];
 
-/** 刷新后的 token 过期秒数（返回给前端） */
+/** 刷新后的 token 过期秒数（返回给前端）
+ * 店主端：凭 openid 每次启动自动重识别，token 给较长有效期，基本无需处理过期 */
 function expiresInSeconds(type) {
-  const map = { CUSTOMER: 7 * 24 * 3600, MERCHANT: 7 * 24 * 3600, ADMIN: 2 * 3600 };
+  const map = { CUSTOMER: 7 * 24 * 3600, MERCHANT: 365 * 24 * 3600, ADMIN: 2 * 3600 };
   return map[type] || 0;
 }
 

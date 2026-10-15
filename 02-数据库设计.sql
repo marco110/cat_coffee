@@ -112,6 +112,7 @@ CREATE TABLE `store_user` (
   `id`                BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '主键',
   `store_id`          BIGINT UNSIGNED NOT NULL                COMMENT '所属门店 ID',
   `phone`             VARCHAR(20)     NOT NULL                COMMENT '登录手机号（全局唯一，软删除后不可复用）',
+  `openid`            VARCHAR(64)     DEFAULT NULL            COMMENT '微信 openid（首次密码登录时绑定，后续凭此自动识别店主身份）',
   `password`          VARCHAR(100)    NOT NULL                COMMENT '密码（bcrypt 加密）',
   `real_name`         VARCHAR(50)              DEFAULT NULL   COMMENT '姓名',
   `avatar`            VARCHAR(255)             DEFAULT NULL   COMMENT '头像',
@@ -129,6 +130,7 @@ CREATE TABLE `store_user` (
   `deleted_at`        DATETIME                 DEFAULT NULL   COMMENT '删除时间（软删除）',
   PRIMARY KEY (`id`),
   UNIQUE KEY `uk_phone` (`phone`),
+  UNIQUE KEY `uk_openid` (`openid`),
   KEY `idx_store_id` (`store_id`),
   KEY `idx_store_role` (`store_id`, `role`, `status`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='店主/店员账号表';

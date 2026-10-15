@@ -21,6 +21,7 @@ const CODES = {
   ACCOUNT_LOCKED: 1009,
   RATE_LIMIT: 1010,
   MERCHANT_DISABLED: 2001,
+  MERCHANT_REMOVED: 2002, // 店主/店员账号已被删除或禁用，凭 openid 识别时返回
 };
 
 class BizError extends Error {

@@ -28,6 +28,7 @@
 import { ref } from 'vue';
 import { merchantLogin } from '@/api/merchant';
 import { useUserStore } from '@/store/user';
+import { wxLoginCode } from '@/utils/merchant-auth';
 import CtKitty from '@/components/ct-kitty.vue';
 
 const userStore = useUserStore();
@@ -39,7 +40,14 @@ async function submit() {
   if (!form.value.password) return uni.showToast({ title: '请输入密码', icon: 'none' });
   loading.value = true;
   try {
-    const data = await merchantLogin(form.value);
+    // 带 wx.login code，便于后台首次绑定 openid，之后凭 openid 自动识别身份
+    let code = '';
+    try {
+      code = await wxLoginCode();
+    } catch (e) {
+      /* 拿不到 code 也能登录，只是本次不绑定 openid */
+    }
+    const data = await merchantLogin({ ...form.value, code });
     userStore.setMerchant({ token: data.token, user: data.user, store: data.store });
     uni.showToast({ title: '登录成功', icon: 'none' });
     setTimeout(() => uni.redirectTo({ url: '/subpackages/merchant/dashboard/index' }), 400);

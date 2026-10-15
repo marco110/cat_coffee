@@ -111,11 +111,12 @@ async function sendSubscribeMessage({ openid, templateId, page, data, miniprogra
   return res;
 }
 
-/** 微信 code2session：MOCK 模式下用 code 派生 openid，便于本地联调 */
+/** 微信 code2session：MOCK 模式下返回稳定 openid，便于本地联调（真实环境 openid 与 code 无关、同一用户恒定） */
 async function code2session(code) {
   if (config.wx.mock) {
-    const hash = crypto.createHash('md5').update(String(code || 'dev')).digest('hex');
-    return { openid: `mock_${hash.slice(0, 24)}`, unionid: null, session_key: 'mock' };
+    // 注意：真实微信每次 wx.login 的 code 都不同但 openid 恒定；这里用固定值模拟，
+    // 否则按 code 派生会导致「首次登录绑定的 openid」与「后续识别用的 openid」不一致，自动识别失效
+    return { openid: 'mock_openid_dev', unionid: null, session_key: 'mock' };
   }
   const url = `https://api.weixin.qq.com/sns/jscode2session?appid=${config.wx.appid}&secret=${config.wx.secret}&js_code=${code}&grant_type=authorization_code`;
   const res = await httpsGetJson(url);

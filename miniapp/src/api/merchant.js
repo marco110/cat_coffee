@@ -5,6 +5,10 @@ const M = '/merchant';
 export function merchantLogin(data) {
   return post(`${M}/auth/login`, data, { auth: null });
 }
+/** 凭微信 openid 识别店主身份（无需密码）：返回 { merchant:boolean, ...session } 或抛出 2001/2002 */
+export function merchantIdentify(code) {
+  return post(`${M}/auth/identify`, { code }, { auth: null });
+}
 export function merchantProfile() {
   return get(`${M}/auth/profile`, null, { auth: 'merchant' });
 }
