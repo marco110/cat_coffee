@@ -113,6 +113,8 @@ CREATE TABLE `store_user` (
   `store_id`          BIGINT UNSIGNED NOT NULL                COMMENT '所属门店 ID',
   `phone`             VARCHAR(20)     NOT NULL                COMMENT '登录手机号（全局唯一，软删除后不可复用）',
   `openid`            VARCHAR(64)     DEFAULT NULL            COMMENT '微信 openid（首次密码登录时绑定，后续凭此自动识别店主身份）',
+  `pushplus_token`    VARCHAR(64)     DEFAULT NULL            COMMENT 'PushPlus 推送 token（店员个人接收账号，留空则不接收）',
+  `notify_enabled`    TINYINT         NOT NULL DEFAULT 1      COMMENT '新订单/取消消息通知开关：1 开 / 0 关',
   `password`          VARCHAR(100)    NOT NULL                COMMENT '密码（bcrypt 加密）',
   `real_name`         VARCHAR(50)              DEFAULT NULL   COMMENT '姓名',
   `avatar`            VARCHAR(255)             DEFAULT NULL   COMMENT '头像',

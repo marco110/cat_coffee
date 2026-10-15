@@ -44,8 +44,26 @@ function renderTitle(items, suffix) {
 }
 
 /**
+ * 取该门店下「已开启通知且填了 PushPlus token」的店员 token 列表
+ * 消息通知与门店关联：下单选中的门店，就通知该门店的对应店员
+ *
+ * @param {string|number} storeId
+ * @returns {Promise<string[]>}
+ */
+async function getStoreNotifyTokens(storeId) {
+  const rows = await query(
+    `SELECT pushplus_token FROM store_user
+     WHERE store_id = ? AND deleted_at IS NULL AND status = 1 AND notify_enabled = 1
+       AND pushplus_token IS NOT NULL AND pushplus_token <> ''`,
+    [storeId]
+  );
+  return rows.map((r) => r.pushplus_token).filter(Boolean);
+}
+
+/**
  * 新订单通知店主（PushPlus）
  * 在事务提交后异步调用，失败不影响下单结果
+ * 通知对象：该门店下开启了通知并配置了 token 的店员（与门店关联）
  *
  * @param {{userId:string|number, storeId:string|number, order:object}} param
  */
@@ -80,7 +98,12 @@ async function notifyNewOrder({ userId, storeId, order }) {
     // 7 门店（分隔线下方居中显示）
     const shopRow = renderShop(store);
 
-    await pushplus({ title, content: rows.join('<br/>') + shopRow });
+    const tokens = await getStoreNotifyTokens(storeId);
+    if (!tokens.length) {
+      logger.info('该门店无可接收通知的店员（未配置 token 或未开启通知），跳过推送');
+      return false;
+    }
+    await pushplus({ title, content: rows.join('<br/>') + shopRow, tokens });
     return true;
   } catch (e) {
     logger.warn('新订单推送失败:', e.message);
@@ -91,6 +114,7 @@ async function notifyNewOrder({ userId, storeId, order }) {
 /**
  * 顾客取消订单通知店主（PushPlus）
  * 事务提交后异步调用，失败不影响取消结果
+ * 通知对象：该门店下开启了通知并配置了 token 的店员（与门店关联）
  *
  * @param {{orderId:string|number, storeId:string|number, reason?:string}} param
  */
@@ -125,7 +149,12 @@ async function notifyCancelOrder({ orderId, storeId, reason }) {
     // 7 门店（分隔线下方居中显示）
     const shopRow = renderShop(store);
 
-    await pushplus({ title, content: rows.join('<br/>') + shopRow });
+    const tokens = await getStoreNotifyTokens(storeId || o.store_id);
+    if (!tokens.length) {
+      logger.info('该门店无可接收通知的店员（未配置 token 或未开启通知），跳过推送');
+      return false;
+    }
+    await pushplus({ title, content: rows.join('<br/>') + shopRow, tokens });
     return true;
   } catch (e) {
     logger.warn('取消订单推送失败:', e.message);

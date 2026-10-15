@@ -51,6 +51,8 @@ router.get(
           isOwner: u.role === 'OWNER' ? 1 : 0,
           status: Number(u.status),
           isInitPassword: Number(u.is_init_password),
+          notifyEnabled: Number(u.notify_enabled),
+          pushplusToken: u.pushplus_token || '',
           loginFailCount: Number(u.login_fail_count),
           lockedUntil: u.locked_until,
           lastLoginAt: u.last_login_at,
@@ -68,7 +70,7 @@ router.post(
   '/store-user',
   adminAuth,
   wrap(async (req, res) => {
-    const { storeId, phone, realName, role } = req.body || {};
+    const { storeId, phone, realName, role, pushplusToken, notifyEnabled } = req.body || {};
     if (!storeId) throw new BizError(CODES.BAD_PARAM, '请选择所属门店');
     if (!isPhone(phone)) throw new BizError(CODES.BAD_PARAM, '请填写正确的手机号');
     const store = await one('SELECT id FROM store WHERE id = ? AND deleted_at IS NULL', [storeId]);
@@ -84,9 +86,9 @@ router.post(
     }
     const pwd = defaultPassword();
     const ins = await exec(
-      `INSERT INTO store_user (store_id, phone, password, real_name, role, is_init_password, status, created_at, updated_at)
-       VALUES (?,?,?,?,?,1,1,?,?)`,
-      [storeId, phone, hash(pwd), realName || '', role === 'OWNER' ? 'OWNER' : 'STAFF', nowSql(), nowSql()]
+      `INSERT INTO store_user (store_id, phone, password, real_name, role, is_init_password, status, pushplus_token, notify_enabled, created_at, updated_at)
+       VALUES (?,?,?,?,?,1,1,?,?,?,?)`,
+      [storeId, phone, hash(pwd), realName || '', role === 'OWNER' ? 'OWNER' : 'STAFF', pushplusToken || null, notifyEnabled === undefined ? 1 : (notifyEnabled ? 1 : 0), nowSql(), nowSql()]
     );
     await operationLog({ req, operatorType: 'ADMIN', operatorId: req.admin.id, operatorName: req.admin.username, storeId, module: 'STORE_USER', action: 'CREATE', description: `新增店员：${phone}`, targetId: ins.insertId });
     return ok(res, { id: sid(ins.insertId), initPassword: pwd }, '新增成功');
@@ -98,7 +100,7 @@ router.put(
   adminAuth,
   wrap(async (req, res) => {
     const u = await getUser(req);
-    const { realName, role, status } = req.body || {};
+    const { realName, role, status, pushplusToken, notifyEnabled } = req.body || {};
     if (role === 'OWNER' && u.role !== 'OWNER') {
       const owner = await one(
         "SELECT id FROM store_user WHERE store_id = ? AND role = 'OWNER' AND deleted_at IS NULL AND id <> ?",
@@ -106,13 +108,18 @@ router.put(
       );
       if (owner) throw new BizError(CODES.CONFLICT, '该门店已有店主账号');
     }
-    await exec('UPDATE store_user SET real_name = ?, role = ?, status = ?, updated_at = ? WHERE id = ?', [
-      realName === undefined ? u.real_name : realName,
-      role === undefined ? u.role : role,
-      status === undefined ? u.status : (status ? 1 : 0),
-      nowSql(),
-      u.id,
-    ]);
+    await exec(
+      'UPDATE store_user SET real_name = ?, role = ?, status = ?, pushplus_token = ?, notify_enabled = ?, updated_at = ? WHERE id = ?',
+      [
+        realName === undefined ? u.real_name : realName,
+        role === undefined ? u.role : role,
+        status === undefined ? u.status : (status ? 1 : 0),
+        pushplusToken === undefined ? u.pushplus_token : (pushplusToken || null),
+        notifyEnabled === undefined ? u.notify_enabled : (notifyEnabled ? 1 : 0),
+        nowSql(),
+        u.id,
+      ]
+    );
     await operationLog({ req, operatorType: 'ADMIN', operatorId: req.admin.id, operatorName: req.admin.username, storeId: u.store_id, module: 'STORE_USER', action: 'UPDATE', description: `编辑账号：${u.phone}`, targetId: u.id });
     return ok(res, { ok: true }, '保存成功');
   })

@@ -26,6 +26,13 @@
             <el-tag v-if="row.lockedUntil" size="small" type="danger" style="margin-left: 4px">锁定</el-tag>
           </template>
         </el-table-column>
+        <el-table-column label="消息通知" width="100">
+          <template #default="{ row }">
+            <el-tag size="small" :type="row.notifyEnabled === 1 ? 'success' : 'info'">
+              {{ row.notifyEnabled === 1 ? '已开启' : '已关闭' }}
+            </el-tag>
+          </template>
+        </el-table-column>
         <el-table-column label="初始密码" width="100">
           <template #default="{ row }">
             <el-tag v-if="row.isInitPassword" size="small" type="warning">未修改</el-tag>
@@ -75,6 +82,14 @@
         <el-form-item label="状态">
           <el-switch v-model="form.status" :active-value="1" :inactive-value="0" active-text="启用" inactive-text="停用" />
         </el-form-item>
+        <el-form-item label="消息通知">
+          <el-switch v-model="form.notifyEnabled" :active-value="1" :inactive-value="0" active-text="开启" inactive-text="关闭" />
+          <div class="form-tip">开启后，该门店有新订单/取消订单时，会向此账号的 PushPlus 推送消息</div>
+        </el-form-item>
+        <el-form-item label="PushPlus Token">
+          <el-input v-model="form.pushplusToken" placeholder="填写个人 PushPlus token 才能接收通知" />
+          <div class="form-tip">在 PushPlus 官网（pushplus.plus）获取个人 token；留空则不接收</div>
+        </el-form-item>
       </el-form>
       <div v-if="!form.id" class="pwd-tip">新增账号初始密码统一为 <b>{{ DEFAULT_PASSWORD }}</b>，重置密码也会恢复为这个密码</div>
       <template #footer>
@@ -114,11 +129,18 @@ async function load() {
 }
 
 function openCreate() {
-  form.value = { storeId: '', phone: '', realName: '', role: 'STAFF', status: 1 };
+  form.value = { storeId: '', phone: '', realName: '', role: 'STAFF', status: 1, notifyEnabled: 1, pushplusToken: '' };
   dialogVisible.value = true;
 }
 function openEdit(row) {
-  form.value = { id: row.id, realName: row.realName, role: row.role, status: row.status };
+  form.value = {
+    id: row.id,
+    realName: row.realName,
+    role: row.role,
+    status: row.status,
+    notifyEnabled: row.notifyEnabled === 1 ? 1 : 0,
+    pushplusToken: row.pushplusToken || '',
+  };
   dialogVisible.value = true;
 }
 
@@ -177,5 +199,11 @@ onMounted(async () => {
   border: 1px solid #ffe0a3;
   border-radius: 6px;
   padding: 8px 10px;
+}
+.form-tip {
+  color: var(--cc-text-secondary);
+  font-size: 12px;
+  line-height: 1.5;
+  margin-top: 4px;
 }
 </style>
