@@ -23,13 +23,15 @@ export function requestPickupSubscribe(callback) {
     tmplIds: [TMPL_PICKUP],
     success: (res) => {
       const state = res[TMPL_PICKUP];
-      // accept=同意；reject=拒绝；ban=被后台封禁；filter=模板被过滤（如重复订阅）
+      // accept=同意；reject=拒绝；ban=被后台封禁；filter=模板被过滤（用户此前已授权/已拒，一次性订阅无法再次授权）
+      // 一次性订阅的特性：已授权后再次调用会直接返回 filter，不再弹窗，故 filter 也视为「已订阅」
       console.log('[subscribe] 取餐提醒授权结果:', state, res);
-      if (callback) callback(state === 'accept', res);
+      const subscribed = state === 'accept' || state === 'filter';
+      if (callback) callback(subscribed, { state, res });
     },
     fail: (err) => {
       console.warn('[subscribe] 取餐提醒授权失败:', err);
-      if (callback) callback(false, { reason: err && (err.errMsg || err.errCode) });
+      if (callback) callback(false, { state: 'fail', reason: err && (err.errMsg || err.errCode) });
     },
   });
   // #endif

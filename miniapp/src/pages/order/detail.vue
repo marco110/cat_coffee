@@ -132,16 +132,18 @@ const subscribed = ref(false);
 
 /** 订阅入口：必须在 tap 的同步调用链里请求，否则微信会直接 fail */
 function onSubscribeClick() {
-  requestPickupSubscribe((accepted, raw) => {
-    if (!accepted) {
+  requestPickupSubscribe((subscribedFlag, raw) => {
+    if (!subscribedFlag) {
       return uni.showToast({
-        title: raw && raw.reason === 'filter' ? '已订阅过，无需重复订阅' : '未订阅，可随时点这里再试',
+        title: '未订阅，可随时点这里再试',
         icon: 'none',
       });
     }
     subscribed.value = true;
     uni.setStorageSync(`pickup_subscribe_${orderId.value}`, 1);
-    uni.showToast({ title: '订阅成功，出品完成后通知你取餐', icon: 'none' });
+    // accept=本次新授权；filter=此前已授权（一次性订阅无法再弹窗）
+    const msg = raw && raw.state === 'filter' ? '已订阅，出品完成后将通知你' : '订阅成功，出品完成后通知你取餐';
+    uni.showToast({ title: msg, icon: 'none' });
   });
 }
 

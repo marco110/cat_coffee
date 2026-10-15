@@ -212,7 +212,7 @@ async function submit() {
   // 订阅提醒必须在「用户点击手势的同步调用链」里发起 —— 务必在任何 await 之前，
   // 否则微信会判定不在手势内而不弹窗（与 setTimeout 一样的坑）
   const subDone = new Promise((resolve) => {
-    requestPickupSubscribe(() => resolve());
+    requestPickupSubscribe((accepted) => resolve(accepted));
   });
   submitting.value = true;
   try {
@@ -226,7 +226,11 @@ async function submit() {
     cart.clear();
     uni.showToast({ title: res.tip || '下单成功', icon: 'none' });
     // 订单成功提交后：等订阅弹窗处理完，再跳转详情页
-    await subDone;
+    const accepted = await subDone;
+    // 授权成功：记下本单已订阅，详情页据此不再显示「开启取餐提醒」
+    if (accepted && res.orderId) {
+      uni.setStorageSync(`pickup_subscribe_${res.orderId}`, 1);
+    }
     setTimeout(() => {
       uni.redirectTo({ url: `/pages/order/detail?id=${res.orderId}` });
     }, 600);
