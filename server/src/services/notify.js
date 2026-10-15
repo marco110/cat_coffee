@@ -94,6 +94,10 @@ async function notifyNewOrder({ userId, storeId, order }) {
     }
     // 6 方式
     rows.push(`<b>方式</b>：${renderType(order.orderType, order.tableNo)}`);
+    // 6.5 备注（有备注才展示）
+    if (order.remark) {
+      rows.push(`<b>备注</b>：${escapeHtml(order.remark)}`);
+    }
     rows.push('<hr/>');
     // 7 门店（分隔线下方居中显示）
     const shopRow = renderShop(store);
@@ -145,6 +149,10 @@ async function notifyCancelOrder({ orderId, storeId, reason }) {
     rows.push(`<b>取消原因</b>：${escapeHtml(reason || o.cancel_reason || '顾客取消')}`);
     // 6 方式
     rows.push(`<b>方式</b>：${renderType(o.order_type, o.table_no)}`);
+    // 6.5 备注（有备注才展示）
+    if (o.remark) {
+      rows.push(`<b>备注</b>：${escapeHtml(o.remark)}`);
+    }
     rows.push('<hr/>');
     // 7 门店（分隔线下方居中显示）
     const shopRow = renderShop(store);

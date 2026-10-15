@@ -19,10 +19,13 @@ export const useUserStore = defineStore('user', {
     merchantToken: '',
     merchantInfo: null,
     merchantStore: null,
+    // 结算前校验手机号：未填手机号时临时保存「待跳转的确认订单页 URL」，去资料页补完手机号后回跳
+    pendingCheckout: '',
   }),
   getters: {
     isLogin: (s) => !!s.token,
     needBindPhone: (s) => !!s.token && !(s.userInfo && s.userInfo.phone),
+    hasPhone: (s) => !!(s.userInfo && s.userInfo.phone),
     isMerchantLogin: (s) => !!s.merchantToken,
   },
   actions: {
@@ -78,6 +81,12 @@ export const useUserStore = defineStore('user', {
       this.merchantInfo = null;
       this.merchantStore = null;
       uni.removeStorageSync(MKEY);
+    },
+    setCheckout(url) {
+      this.pendingCheckout = url || '';
+    },
+    clearCheckout() {
+      this.pendingCheckout = '';
     },
     persist() {
       uni.setStorageSync(

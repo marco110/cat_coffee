@@ -318,9 +318,13 @@ async function goConfirm() {
   const orderType = userStore.orderType || 'TAKEAWAY';
   const tableId = orderType === 'DINE_IN' ? userStore.tableId || '' : '';
   const tableNo = orderType === 'DINE_IN' ? userStore.tableNo || '' : '';
-  uni.navigateTo({
-    url: `/pages/order/confirm?storeId=${storeId.value}&orderType=${orderType}&tableId=${tableId}&tableNo=${encodeURIComponent(tableNo)}`,
-  });
+  const confirmUrl = `/pages/order/confirm?storeId=${storeId.value}&orderType=${orderType}&tableId=${tableId}&tableNo=${encodeURIComponent(tableNo)}`;
+  // 结算前校验手机号：未填写则先去资料页补全，保存后回跳确认订单页
+  if (!userStore.hasPhone) {
+    userStore.setCheckout(confirmUrl);
+    return uni.navigateTo({ url: '/pages/mine/profile?back=confirm' });
+  }
+  uni.navigateTo({ url: confirmUrl });
 }
 </script>
 

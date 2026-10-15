@@ -25,19 +25,19 @@
         />
       </view>
       <view class="f-row last">
-        <text class="f-label">手机号</text>
+        <text class="f-label"><text class="req">*</text>手机号</text>
         <input
           class="f-input"
           type="number"
           maxlength="11"
           :value="phone"
-          placeholder="选填，便于店主联系你"
+          placeholder="请填写手机号"
           placeholder-class="f-ph"
           @input="phone = $event.detail.value"
         />
         <text v-if="phone" class="f-clear" @click="phone = ''">清除</text>
       </view>
-      <text class="f-note">手机号非必填，仅用于店主联系；填写后可在订单中看到</text>
+      <text class="f-note">手机号用于订单联系与取餐通知，下单前必填</text>
     </view>
 
     <button class="save-btn" :disabled="saving" @click="save">{{ saving ? '保存中…' : '保存' }}</button>
@@ -46,7 +46,7 @@
 
 <script setup>
 import { ref, computed } from 'vue';
-import { onShow } from '@dcloudio/uni-app';
+import { onLoad, onShow } from '@dcloudio/uni-app';
 import { getProfile, updateProfile } from '@/api/customer';
 import { uploadFile } from '@/api/request';
 import { fixUrl } from '@/config';
@@ -60,6 +60,12 @@ const nickname = ref('');
 const phone = ref('');
 const avatarRemote = ref('');
 const saving = ref(false);
+// 来源：结算前补全手机号时为 'confirm'，保存后跳回确认订单页
+const back = ref('');
+
+onLoad((opt) => {
+  back.value = (opt && opt.back) || '';
+});
 
 // 头像为空或加载失败（旧 URL 失效）时回落到默认头像；主题图再失败则用内联 base64 兜底
 const avatarFailed = ref(0);
@@ -106,14 +112,22 @@ async function save() {
   const name = String(nickname.value || '').trim();
   if (!name) return uni.showToast({ title: '昵称不能为空', icon: 'none' });
   const p = String(phone.value || '').trim();
-  if (p && !/^1[3-9]\d{9}$/.test(p)) return uni.showToast({ title: '手机号格式不正确', icon: 'none' });
+  if (!p) return uni.showToast({ title: '请填写手机号', icon: 'none' });
+  if (!/^1[3-9]\d{9}$/.test(p)) return uni.showToast({ title: '手机号格式不正确', icon: 'none' });
   if (saving.value) return;
   saving.value = true;
   try {
     const data = await updateProfile({ nickname: name, avatar: avatarRemote.value, phone: p });
     fill(data);
     uni.showToast({ title: '已保存', icon: 'success' });
-    setTimeout(() => uni.navigateBack(), 600);
+    // 结算前补全手机号：保存后直接跳回确认订单页
+    if (back.value === 'confirm' && userStore.pendingCheckout) {
+      const url = userStore.pendingCheckout;
+      userStore.clearCheckout();
+      setTimeout(() => uni.redirectTo({ url }), 500);
+    } else {
+      setTimeout(() => uni.navigateBack(), 600);
+    }
   } catch (err) {
     uni.showToast({ title: err.msg || '保存失败', icon: 'none' });
   } finally {
@@ -198,6 +212,10 @@ async function save() {
   width: 140rpx;
   font-size: 28rpx;
   color: $text-primary;
+  .req {
+    color: #f56c6c;
+    margin-right: 4rpx;
+  }
 }
 .f-input {
   flex: 1;

@@ -216,6 +216,11 @@ async function goConfirm() {
       confirmText: '我知道了',
     });
   }
+  // 结算前校验手机号：未填写则先去资料页补全，保存后回跳确认订单页
+  if (!userStore.hasPhone) {
+    userStore.setCheckout(`/pages/order/confirm?storeId=${storeId.value}&orderType=TAKEAWAY`);
+    return uni.navigateTo({ url: '/pages/mine/profile?back=confirm' });
+  }
   uni.navigateTo({ url: `/pages/order/confirm?storeId=${storeId.value}&orderType=TAKEAWAY` });
 }
 </script>
