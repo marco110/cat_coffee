@@ -103,7 +103,7 @@ async function load() {
       return;
     }
     if (s !== 'ok') {
-      uni.redirectTo({ url: '/subpackages/merchant/login/index' });
+      uni.redirectTo({ url: '/pages/merchant-entry/index' });
       return;
     }
   }

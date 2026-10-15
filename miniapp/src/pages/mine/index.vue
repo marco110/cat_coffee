@@ -56,7 +56,7 @@
       <view class="row" @click="go('/pages/coupon/center')">
         <text>领券中心</text><text class="arrow">›</text>
       </view>
-      <view class="row" @click="go('/pages/merchant-entry/index')">
+      <view class="row" @click="goMerchantEntry">
         <text>店主入口</text><text class="arrow">›</text>
       </view>
     </view>
@@ -70,6 +70,7 @@ import { getProfile, getMemberInfo, getOngoing } from '@/api/customer';
 import { fixUrl } from '@/config';
 import { useUserStore } from '@/store/user';
 import { ensureLogin, DEFAULT_STORE_ID } from '@/utils/auth';
+import { goMerchantEntry } from '@/utils/merchant-auth';
 import { DEFAULT_AVATAR, DEFAULT_AVATAR_FALLBACK } from '@/utils/default-avatar';
 import CtKitty from '@/components/ct-kitty.vue';
 

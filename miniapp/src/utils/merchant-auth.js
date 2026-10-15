@@ -40,3 +40,33 @@ export async function ensureMerchant() {
     return 'none';
   }
 }
+
+/**
+ * 点击「店主入口」时的统一跳转：
+ * - 已持有店主会话 → 直接进工作台
+ * - 未持有会话：先凭 openid 静默识别（换设备/会话失效的店主也能免密直进）
+ *   - 识别成功 → 进工作台
+ *   - 未绑定过 → 进店主入口页（显示登录表单）
+ */
+export function goMerchantEntry() {
+  const store = useUserStore();
+  store.restore(); // 确保从本地存储加载最新会话
+  if (store.isMerchantLogin) {
+    uni.redirectTo({ url: '/subpackages/merchant/dashboard/index' });
+    return;
+  }
+  uni.showLoading({ title: '识别中...', mask: true });
+  ensureMerchant()
+    .then((s) => {
+      uni.hideLoading();
+      if (s === 'ok') {
+        uni.redirectTo({ url: '/subpackages/merchant/dashboard/index' });
+      } else {
+        uni.navigateTo({ url: '/pages/merchant-entry/index' });
+      }
+    })
+    .catch(() => {
+      uni.hideLoading();
+      uni.navigateTo({ url: '/pages/merchant-entry/index' });
+    });
+}

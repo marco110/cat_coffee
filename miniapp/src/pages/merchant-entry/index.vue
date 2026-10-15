@@ -5,20 +5,34 @@
       <text class="h-sub">接单、改单、管菜单、看经营数据</text>
     </view>
 
+    <!-- 已登录：直接进入工作台 -->
     <view v-if="status === 'ok' && userStore.isMerchantLogin" class="card info">
       <text class="store">{{ userStore.merchantStore?.name }}</text>
       <text class="who">{{ userStore.merchantInfo?.realName }}（{{ roleText }}）</text>
       <view class="btn" @click="go('/subpackages/merchant/dashboard/index')">进入工作台</view>
       <view class="btn ghost" @click="logout">退出登录</view>
     </view>
+
+    <!-- 账号已失效（被后台删除/禁用） -->
     <view v-else-if="status === 'removed'" class="card info">
       <text class="store warn">账号已失效</text>
       <text class="tip">您已不是店主/店员，请联系管理员处理</text>
       <view class="btn ghost" @click="logout">清除本地记录</view>
     </view>
-    <view v-else class="card info">
-      <text class="tip">请使用超管为您开通的手机号登录</text>
-      <view class="btn" @click="go('/subpackages/merchant/login/index')">店主登录</view>
+
+    <!-- 未登录：账号密码登录（首次登录会绑定微信，之后自动识别免密进入） -->
+    <view v-else class="card form">
+      <text class="form-title">店主登录</text>
+      <view class="field">
+        <text class="label">手机号</text>
+        <input v-model="form.phone" class="input" type="number" maxlength="11" placeholder="请输入手机号" placeholder-class="ph" />
+      </view>
+      <view class="field">
+        <text class="label">密码</text>
+        <input v-model="form.password" class="input" password placeholder="请输入密码" placeholder-class="ph" />
+      </view>
+      <view class="login-btn" :class="{ loading: loading }" @click="submit">{{ loading ? '登录中...' : '登录' }}</view>
+      <text class="tip">忘记密码请联系平台管理员重置</text>
     </view>
 
     <view class="card features">
@@ -34,22 +48,52 @@
 import { ref, computed } from 'vue';
 import { onShow } from '@dcloudio/uni-app';
 import { useUserStore } from '@/store/user';
-import { ensureMerchant } from '@/utils/merchant-auth';
+import { ensureMerchant, wxLoginCode } from '@/utils/merchant-auth';
+import { merchantLogin } from '@/api/merchant';
 
 const userStore = useUserStore();
 // 'init' | 'ok' | 'none' | 'removed'
 const status = ref('init');
 const roleText = computed(() => ({ OWNER: '店主', STAFF: '店员' }[userStore.merchantInfo?.role] || ''));
 
+const form = ref({ phone: '', password: '' });
+const loading = ref(false);
+
 onShow(async () => {
   userStore.restore();
-  // 已登录直接进；否则凭 openid 自动识别（无需密码、无需处理过期）
+  // 已登录：直接进工作台，不展示店主入口页（点击「店主入口」时也已在前端短路）
   if (userStore.isMerchantLogin) {
-    status.value = 'ok';
-  } else {
-    status.value = await ensureMerchant();
+    uni.redirectTo({ url: '/subpackages/merchant/dashboard/index' });
+    return;
   }
+  // 未登录：凭 openid 自动识别（无需密码、无需处理过期）
+  status.value = await ensureMerchant();
 });
+
+async function submit() {
+  if (!/^1[3-9]\d{9}$/.test(form.value.phone)) return uni.showToast({ title: '请输入正确的手机号', icon: 'none' });
+  if (!form.value.password) return uni.showToast({ title: '请输入密码', icon: 'none' });
+  loading.value = true;
+  try {
+    // 带 wx.login code，便于后台首次绑定 openid，之后凭 openid 自动识别身份
+    let code = '';
+    try {
+      code = await wxLoginCode();
+    } catch (e) {
+      /* 拿不到 code 也能登录，只是本次不绑定 openid */
+    }
+    const data = await merchantLogin({ ...form.value, code });
+    userStore.setMerchant({ token: data.token, user: data.user, store: data.store });
+    status.value = 'ok';
+    uni.showToast({ title: '登录成功', icon: 'none' });
+    setTimeout(() => uni.redirectTo({ url: '/subpackages/merchant/dashboard/index' }), 400);
+  } catch (e) {
+    uni.showToast({ title: e.msg || '登录失败', icon: 'none' });
+  } finally {
+    loading.value = false;
+  }
+}
+
 function go(url) {
   uni.navigateTo({ url });
 }
@@ -90,6 +134,9 @@ function logout() {
 .store {
   font-size: 34rpx;
   font-weight: 700;
+  &.warn {
+    color: $coffee-brown;
+  }
 }
 .who {
   margin-top: 10rpx;
@@ -117,6 +164,45 @@ function logout() {
     color: $text-secondary;
     border: 1rpx solid $border-color;
   }
+}
+.form {
+  margin-top: 32rpx;
+  background: #fff;
+  border-radius: $radius-card;
+  padding: 48rpx 40rpx;
+  box-shadow: $shadow-pop;
+}
+.form-title {
+  font-size: 34rpx;
+  font-weight: 700;
+  margin-bottom: 24rpx;
+}
+.field {
+  margin-bottom: 32rpx;
+}
+.label {
+  font-size: 26rpx;
+  color: $text-secondary;
+}
+.input {
+  margin-top: 12rpx;
+  height: 88rpx;
+  border-bottom: 1rpx solid $border-color;
+  font-size: 30rpx;
+}
+.ph {
+  color: $text-placeholder;
+}
+.login-btn {
+  margin-top: 40rpx;
+  height: 92rpx;
+  border-radius: $radius-button;
+  background: $coffee-brown;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 32rpx;
 }
 .features {
   margin-top: 32rpx;

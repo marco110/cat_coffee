@@ -88,7 +88,7 @@ const loading = ref(false);
 let timer = null;
 
 async function load(reset = true) {
-  if (!userStore.isMerchantLogin) return uni.redirectTo({ url: '/subpackages/merchant/login/index' });
+  if (!userStore.isMerchantLogin) return uni.redirectTo({ url: '/pages/merchant-entry/index' });
   if (loading.value) return;
   loading.value = true;
   if (reset) page.value = 1;

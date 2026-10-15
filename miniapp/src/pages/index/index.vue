@@ -72,6 +72,7 @@ import { fixUrl } from '@/config';
 import { price } from '@/utils/format';
 import { useUserStore } from '@/store/user';
 import { ensureLogin, DEFAULT_STORE_ID } from '@/utils/auth';
+import { goMerchantEntry } from '@/utils/merchant-auth';
 import CtKitty from '@/components/ct-kitty.vue';
 
 const userStore = useUserStore();
@@ -144,7 +145,7 @@ function openMap() {
   }
 }
 function goMerchant() {
-  uni.navigateTo({ url: '/pages/merchant-entry/index' });
+  goMerchantEntry();
 }
 
 onMounted(async () => {
