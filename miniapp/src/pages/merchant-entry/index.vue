@@ -1,7 +1,7 @@
 <template>
   <view class="page">
     <view class="hero">
-      <text class="h-title">爱猫咖啡 · 店主端</text>
+      <text class="h-title">12卡coffee · 店主端</text>
       <text class="h-sub">接单、改单、管菜单、看经营数据</text>
     </view>
 

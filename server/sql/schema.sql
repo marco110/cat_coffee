@@ -1,5 +1,5 @@
 -- =============================================================================
---  爱猫咖啡 · 扫码点餐系统  数据库设计
+--  12卡coffee · 扫码点餐系统  数据库设计
 --  DB: MySQL 8.0+    Charset: utf8mb4 / utf8mb4_unicode_ci    Engine: InnoDB
 --  说明：
 --    1. money 字段统一使用 DECIMAL(10,2)（金额单位：元）
@@ -771,10 +771,10 @@ VALUES ('admin', '$2b$10$Qtyuxef1Vr05Z1dD2tnIQu5Q5tufGKJbsx6n1.hbVdTuKR6UmFY9e',
 
 -- 平台默认配置
 INSERT INTO `sys_config` (`config_key`, `config_value`, `config_group`, `description`) VALUES
-('platform_name',        '爱猫咖啡',  'PLATFORM', '平台名称'),
+('platform_name',        '12卡coffee',  'PLATFORM', '平台名称'),
 ('platform_logo',        '',         'PLATFORM', '平台 Logo 地址'),
 ('service_phone',        '',         'PLATFORM', '客服电话'),
-('copyright',            '爱猫咖啡',  'PLATFORM', '版权信息'),
+('copyright',            '12卡coffee',  'PLATFORM', '版权信息'),
 ('default_growth_rate',  '1',        'POINTS',   '新门店默认成长值比例：1 元 = N 成长值'),
 ('default_points_rate',  '1',        'POINTS',   '新门店默认积分比例：1 元 = N 积分'),
 ('default_points_deduct_ratio', '100', 'POINTS', '新门店默认抵扣比例：多少积分 = 1 元'),
@@ -795,7 +795,7 @@ INSERT INTO `member_level` (`store_id`, `name`, `level_value`, `growth_threshold
 
 -- 示例门店
 INSERT INTO `store` (`name`, `intro`, `announcement`, `phone`, `city`, `address`, `business_hours_start`, `business_hours_end`)
-VALUES ('爱猫咖啡（旗舰店）', '一家有猫的咖啡店，主营手冲、意式与季节限定特调。', '新店开业，满 50 减 10，欢迎撸猫~', '13800000000', '深圳市', '南山区科技园某某路 1 号', '09:00', '22:00');
+VALUES ('12卡coffee（旗舰店）', '一家有猫的咖啡店，主营手冲、意式与季节限定特调。', '新店开业，满 50 减 10，欢迎撸猫~', '13800000000', '深圳市', '南山区科技园某某路 1 号', '09:00', '22:00');
 
 -- 示例店主账号：手机号 13900000000 / 密码 admin123（务必修改）
 INSERT INTO `store_user` (`store_id`, `phone`, `password`, `real_name`, `role`, `is_init_password`, `status`)

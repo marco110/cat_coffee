@@ -4,7 +4,7 @@
       <image class="bg" :src="fixUrl(store.cover)" mode="aspectFill" />
       <ct-kitty class="hero-paw" mode="paw" :size="180" color="#ffffff" opacity="0.18" />
       <view class="hero-mask">
-        <view class="store-name">{{ store.name || '爱猫咖啡' }}</view>
+        <view class="store-name">{{ store.name || '12卡coffee' }}</view>
         <view class="status-row">
           <text class="dot" :class="{ on: store.businessStatus === 1 }" />
           <text class="status-text">{{ store.businessStatus === 1 ? '营业中' : '休息中' }}</text>

@@ -11,7 +11,7 @@
           <KittyFace :size="72" color="#ff6fa5" bow="#ef3d6b" />
           <span class="bow"><i /></span>
         </div>
-        <h1>爱猫咖啡</h1>
+        <h1>12卡coffee</h1>
         <p>🍰 扫码点餐 · 平台管理后台 🍰</p>
       </div>
 

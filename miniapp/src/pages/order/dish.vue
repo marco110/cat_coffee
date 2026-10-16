@@ -204,7 +204,7 @@ const quantity = computed(() => {
 
 /** 分享内容：菜品名 + 价格，封面用菜品图 */
 const shareTitle = computed(() => {
-  const name = dish.value.name || '爱猫咖啡';
+  const name = dish.value.name || '12卡coffee';
   return dish.value.price ? `${name} · 点我一起喝一杯🐾` : `${name} · 点我一起喝一杯🐾`;
 });
 const shareQuery = computed(() => `id=${dishId.value}&storeId=${storeId.value}`);

@@ -3,7 +3,7 @@
     <aside class="cc-sidebar" :style="{ width: collapsed ? '72px' : '214px' }">
       <div class="logo">
         <KittyFace :size="collapsed ? 30 : 34" color="#ffffff" bow="#ffd84d" />
-        <span v-if="!collapsed" class="logo-text">爱猫咖啡<span class="logo-sub">超管后台</span></span>
+        <span v-if="!collapsed" class="logo-text">12卡coffee<span class="logo-sub">超管后台</span></span>
       </div>
       <el-menu
         class="menu"

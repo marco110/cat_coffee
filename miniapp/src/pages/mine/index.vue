@@ -4,7 +4,7 @@
       <ct-kitty class="card-paw" mode="paw" :size="200" color="#ffffff" opacity="0.18" />
       <image class="avatar" :src="avatarUrl" mode="aspectFill" @error="avatarFailed++" />
       <view class="u-info">
-        <text class="nickname">{{ userInfo.nickname || '爱猫咖啡用户' }}</text>
+        <text class="nickname">{{ userInfo.nickname || '12卡coffee用户' }}</text>
         <text class="phone" :class="{ empty: !userInfo.phone }">
           {{ userInfo.phone || '' }}
         </text>

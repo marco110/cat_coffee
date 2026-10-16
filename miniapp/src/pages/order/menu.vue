@@ -132,7 +132,7 @@ onShow(async () => {
 });
 
 /** 分享内容：门店名 + 到店自取，封面优先门店图 */
-const shareTitle = computed(() => `${store.value.name || '爱猫咖啡'} · 在线点单，到店即取🐾`);
+const shareTitle = computed(() => `${store.value.name || '12卡coffee'} · 在线点单，到店即取🐾`);
 const shareQuery = computed(() => `storeId=${storeId.value}`);
 /** 分享封面：门店封面，兜底用第一道菜的封面 */
 const shareImage = computed(() => {

@@ -2,7 +2,7 @@
     "name": "cat-coffee-server",
     "version": "1.0.0",
     "private": true,
-    "description": "爱猫咖啡 · 扫码点餐系统 服务端（Node.js + Express + MySQL8）",
+    "description": "12卡coffee · 扫码点餐系统 服务端（Node.js + Express + MySQL8）",
     "main": "src/app.js",
     "scripts": {
         "start": "node src/app.js",

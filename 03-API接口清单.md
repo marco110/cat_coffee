@@ -1,4 +1,4 @@
-# 爱猫咖啡 · 扫码点餐系统 —— API 接口清单
+# 12卡coffee · 扫码点餐系统 —— API 接口清单
 
 版本：v1.0
 Base URL：`https://api.example.com/api`
@@ -424,7 +424,7 @@ X-Request-Id: <客户端生成的唯一请求 ID，用于幂等与日志追踪>
   "data": {
     "store": {
       "id": "1",
-      "name": "爱猫咖啡（旗舰店）",
+      "name": "12卡coffee（旗舰店）",
       "logo": "https://...",
       "businessStatus": 1,
       "businessHours": "09:00 - 22:00",
@@ -653,7 +653,7 @@ X-Request-Id: <客户端生成的唯一请求 ID，用于幂等与日志追踪>
     "id": "10086",
     "orderNo": "20260914153205014823",
     "storeId": "1",
-    "storeName": "爱猫咖啡（旗舰店）",
+    "storeName": "12卡coffee（旗舰店）",
     "orderType": "DINE_IN",
     "tableNo": "A03",
     "pickupCode": null,
@@ -728,7 +728,7 @@ X-Request-Id: <客户端生成的唯一请求 ID，用于幂等与日志追踪>
     "expiresIn": 604800,
     "isInitPassword": 1,
     "user": { "id": "1", "realName": "店长小爱", "role": "OWNER", "avatar": null },
-    "store": { "id": "1", "name": "爱猫咖啡（旗舰店）", "logo": "https://...", "businessStatus": 1 }
+    "store": { "id": "1", "name": "12卡coffee（旗舰店）", "logo": "https://...", "businessStatus": 1 }
   }
 }
 ```
@@ -901,7 +901,7 @@ X-Request-Id: <客户端生成的唯一请求 ID，用于幂等与日志追踪>
     "phone": "13900000000",
     "realName": "店长小爱",
     "storeId": "1",
-    "storeName": "爱猫咖啡（旗舰店）",
+    "storeName": "12卡coffee（旗舰店）",
     "role": "OWNER",
     "initPassword": "Kf7m2Qa9",
     "tip": "初始密码仅显示一次，请复制并告知店主"

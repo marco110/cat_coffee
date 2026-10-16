@@ -2,7 +2,7 @@
   "pages": [
     {
       "path": "pages/index/index",
-      "style": { "navigationBarTitleText": "爱猫咖啡", "navigationBarBackgroundColor": "#FF6FA5", "navigationBarTextStyle": "white" }
+      "style": { "navigationBarTitleText": "首页", "navigationBarBackgroundColor": "#FF6FA5", "navigationBarTextStyle": "white" }
     },
     {
       "path": "pages/order/menu",
@@ -61,7 +61,7 @@
     {
       "root": "subpackages/merchant",
       "pages": [
-        { "path": "dashboard/index", "style": { "navigationBarTitleText": "爱猫咖啡 · 店主" } },
+        { "path": "dashboard/index", "style": { "navigationBarTitleText": "12卡coffee · 店主" } },
         { "path": "order/list", "style": { "navigationBarTitleText": "订单管理", "enablePullDownRefresh": true } },
         { "path": "order/detail", "style": { "navigationBarTitleText": "订单详情" } },
         { "path": "order/modify", "style": { "navigationBarTitleText": "修改订单" } },
@@ -115,7 +115,7 @@
   },
   "globalStyle": {
     "navigationBarTextStyle": "black",
-    "navigationBarTitleText": "爱猫咖啡",
+    "navigationBarTitleText": "12卡coffee",
     "navigationBarBackgroundColor": "#FFFFFF",
     "backgroundColor": "#FFF6F9",
     "backgroundTextStyle": "dark"

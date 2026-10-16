@@ -40,7 +40,7 @@ router.beforeEach((to) => {
 });
 
 router.afterEach((to) => {
-  if (to.meta?.title) document.title = `爱猫咖啡 · ${to.meta.title}`;
+  if (to.meta?.title) document.title = `12卡coffee · ${to.meta.title}`;
 });
 
 export default router;
