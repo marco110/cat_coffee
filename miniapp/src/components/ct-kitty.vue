@@ -1,11 +1,13 @@
 <template>
   <view class="kitty" :class="[`kitty--${mode}`]" :style="rootStyle">
-    <!-- 优先使用主题图片（可在 static/kitty/ 下替换为官方授权素材），失败回退绘制版 -->
-    <image v-if="imgSrc && !imgFailed" class="k-img" :src="imgSrc" mode="aspectFit" @error="imgFailed = true" />
+    <!-- 猫爪：直接用 emoji 🐾（随字体大小/透明度自适应） -->
+    <text v-if="mode === 'paw'" class="k-emoji">🐾</text>
 
-    <template v-if="!imgSrc || imgFailed">
-      <!-- 小猫脸（Hello Kitty 风：宽圆脸 + 侧边蝴蝶结 + 柠檬黄小鼻 + 无嘴） -->
-      <template v-if="mode === 'face'">
+    <!-- 小猫脸：优先主题图片（可在 static/kitty/ 下替换为官方授权素材），失败回退绘制版 -->
+    <template v-else>
+      <image v-if="imgSrc && !imgFailed" class="k-img" :src="imgSrc" mode="aspectFit" @error="imgFailed = true" />
+
+      <template v-if="!imgSrc || imgFailed">
         <view class="ear ear-l" />
         <view class="ear ear-r" />
         <view class="head">
@@ -24,15 +26,6 @@
           <view class="loop loop-r" />
           <view class="knot" />
         </view>
-      </template>
-
-      <!-- 猫爪 -->
-      <template v-else>
-        <view class="toe t1" />
-        <view class="toe t2" />
-        <view class="toe t3" />
-        <view class="toe t4" />
-        <view class="pad" />
       </template>
     </template>
   </view>
@@ -68,6 +61,7 @@ const rootStyle = computed(() => ({
   '--k-color': props.color,
   '--k-bow': props.bowColor,
   '--k-nose': props.noseColor,
+  fontSize: `${props.size}rpx`,
   opacity: Number(props.opacity),
 }));
 </script>
@@ -82,6 +76,16 @@ const rootStyle = computed(() => ({
   width: 100%;
   height: 100%;
   display: block;
+}
+.k-emoji {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  font-size: inherit;
+  line-height: 1;
+  color: var(--k-color);
 }
 
 .kitty--face {
