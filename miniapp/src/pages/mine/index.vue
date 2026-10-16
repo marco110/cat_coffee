@@ -56,7 +56,7 @@
       <view class="row" @click="go('/pages/coupon/center')">
         <text>领券中心</text><text class="arrow">›</text>
       </view>
-      <view class="row" @click="goMerchantEntry">
+      <view v-if="!isReview" class="row" @click="goMerchantEntry">
         <text>店主入口</text><text class="arrow">›</text>
       </view>
     </view>
@@ -73,8 +73,11 @@ import { ensureLogin, DEFAULT_STORE_ID } from '@/utils/auth';
 import { goMerchantEntry } from '@/utils/merchant-auth';
 import { DEFAULT_AVATAR, DEFAULT_AVATAR_FALLBACK } from '@/utils/default-avatar';
 import CtKitty from '@/components/ct-kitty.vue';
+import { useAppStore } from '@/store/app';
 
 const userStore = useUserStore();
+const appStore = useAppStore();
+const isReview = computed(() => appStore.isReview);
 const userInfo = ref({});
 const member = ref({});
 const ongoingCount = ref(0);
@@ -89,9 +92,18 @@ const avatarUrl = computed(() => {
 });
 
 onLoad(async () => {
+  // 审核版本：不进入「我的」，回到首页（咖啡知识库）
+  if (appStore.isReview) {
+    uni.switchTab({ url: '/pages/index/index' });
+    return;
+  }
   await ensureLogin();
 });
 onShow(async () => {
+  if (appStore.isReview) {
+    uni.switchTab({ url: '/pages/index/index' });
+    return;
+  }
   await load();
 });
 

@@ -1,5 +1,5 @@
 <template>
-  <view class="page">
+  <view v-if="!isReview" class="page">
     <view class="topbar">
       <view class="pick">
         <text class="mode-tag">门店自取</text>
@@ -65,6 +65,12 @@
 
 
   </view>
+
+  <!-- 审核版本：不进入点餐，仅展示提示 -->
+  <view v-else class="review-block">
+    <ct-kitty mode="paw" :size="140" color="#ff6fa5" opacity="0.6" />
+    <text class="rb-text">当前小程序不支持点餐，敬请期待~</text>
+  </view>
 </template>
 
 <script setup>
@@ -81,9 +87,12 @@ import CtQty from '@/components/ct-qty.vue';
 import CtCartBar from '@/components/ct-cart-bar.vue';
 import CtCartPanel from '@/components/ct-cart-panel.vue';
 import CtKitty from '@/components/ct-kitty.vue';
+import { useAppStore } from '@/store/app';
 
 const cart = useCartStore();
 const userStore = useUserStore();
+const appStore = useAppStore();
+const isReview = computed(() => appStore.isReview);
 
 const storeId = ref('');
 const store = ref({});
@@ -100,6 +109,8 @@ const panelVisible = ref(false);
 const storeClosed = computed(() => Number(store.value.businessStatus) === 0);
 
 onLoad(async (opt) => {
+  // 审核版本：不进入点餐，仅展示提示
+  if (appStore.isReview) return;
   await ensureLogin();
   // 从分享链接进来时以链接里的门店为准，好友可能先于自己到过别家门店
   storeId.value = (opt && opt.storeId) || userStore.storeId || String(DEFAULT_STORE_ID);
@@ -113,6 +124,7 @@ onLoad(async (opt) => {
 
 /** tabBar 页面只在首次进入时触发 onLoad，切回来时同步最新状态 */
 onShow(async () => {
+  if (appStore.isReview) return;
   if (!storeId.value) return; // onLoad 尚未执行完
   loadStore(); // 回到点餐页时刷新营业状态，避免用旧状态放行下单
   const sid = userStore.storeId;
@@ -367,5 +379,17 @@ async function goConfirm() {
 }
 .bottom-space {
   height: 160rpx;
+}
+.review-block {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+  gap: 28rpx;
+  .rb-text {
+    font-size: 30rpx;
+    color: $text-secondary;
+  }
 }
 </style>

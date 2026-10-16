@@ -83,3 +83,8 @@ export function getCouponCenter(storeId) {
 export function claimCoupon(couponId) {
   return post(`/customer/coupon/${couponId}/claim`);
 }
+
+/** 小程序版本模式：PROD 生产 / REVIEW 审核展示 */
+export function getAppConfig() {
+  return get('/customer/app-config');
+}

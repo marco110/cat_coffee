@@ -1,5 +1,5 @@
 <template>
-  <view class="page">
+  <view v-if="!isReview" class="page">
     <view class="tip card">
       <ct-kitty mode="paw" :size="90" color="#ff6fa5" opacity="0.9" />
       <view class="tip-text">
@@ -45,10 +45,16 @@
 
     <view class="foot-paw">做好的饮品会在这里叫号，别走远哦🐾</view>
   </view>
+
+  <!-- 审核版本：不进入取餐，仅展示提示 -->
+  <view v-else class="review-block">
+    <ct-kitty mode="paw" :size="140" color="#ff6fa5" opacity="0.6" />
+    <text class="rb-text">当前小程序不支持取餐，敬请期待~</text>
+  </view>
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
 import { onShow, onHide, onPullDownRefresh } from '@dcloudio/uni-app';
 import { getOrderList, cancelOrder, urgeOrder } from '@/api/customer';
 import { price, dateText } from '@/utils/format';
@@ -56,7 +62,10 @@ import { ensureLogin } from '@/utils/auth';
 import CtStatusTag from '@/components/ct-status-tag.vue';
 import CtEmpty from '@/components/ct-empty.vue';
 import CtKitty from '@/components/ct-kitty.vue';
+import { useAppStore } from '@/store/app';
 
+const appStore = useAppStore();
+const isReview = computed(() => appStore.isReview);
 const OP_TEXT = { CANCEL: '取消订单', URGE: '催单', REORDER: '再来一单' };
 
 const list = ref([]);
@@ -64,6 +73,8 @@ const loading = ref(false);
 let timer = null;
 
 onShow(async () => {
+  // 审核版本：不进入取餐（订单），仅展示提示
+  if (appStore.isReview) return;
   await ensureLogin();
   load(true);
   // 取餐场景需要及时看到状态变化，10s 轻量轮询
@@ -241,6 +252,18 @@ function onOp(o, b) {
     background: $pink-dark;
     border-color: $pink-dark;
     color: #fff;
+  }
+}
+.review-block {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+  gap: 28rpx;
+  .rb-text {
+    font-size: 30rpx;
+    color: $text-secondary;
   }
 }
 </style>

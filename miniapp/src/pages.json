@@ -1,11 +1,15 @@
 {
   "pages": [
-    {
-      "path": "pages/index/index",
-      "style": { "navigationBarTitleText": "首页", "navigationBarBackgroundColor": "#FF6FA5", "navigationBarTextStyle": "white" }
-    },
-    {
-      "path": "pages/order/menu",
+  {
+  "path": "pages/index/index",
+  "style": { "navigationBarTitleText": "首页", "navigationBarBackgroundColor": "#FF6FA5", "navigationBarTextStyle": "white" }
+  },
+  {
+  "path": "pages/review/detail",
+  "style": { "navigationBarTitleText": "咖啡详情", "navigationBarBackgroundColor": "#FF6FA5", "navigationBarTextStyle": "white" }
+  },
+  {
+  "path": "pages/order/menu",
       "style": { "navigationBarTitleText": "点餐", "navigationBarBackgroundColor": "#FF6FA5", "navigationBarTextStyle": "white" }
     },
     {

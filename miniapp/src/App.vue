@@ -1,14 +1,18 @@
 <script setup>
 import { onLaunch, onShow } from '@dcloudio/uni-app';
 import { useUserStore } from '@/store/user';
+import { useAppStore } from '@/store/app';
 
 const userStore = useUserStore();
+const appStore = useAppStore();
 
 onLaunch((options) => {
   // 扫码进入：scene = s{storeId}t{tableId}
   const scene = options?.query?.scene ? decodeURIComponent(options.query.scene) : '';
   if (scene) userStore.setScene(scene);
   userStore.restore();
+  // 拉取版本模式（生产/审核），决定小程序呈现哪套内容
+  appStore.loadAppConfig();
 });
 
 onShow(() => {

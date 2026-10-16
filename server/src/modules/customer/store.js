@@ -9,6 +9,21 @@ const { formatDish } = require('../../services/price');
 
 const router = express.Router();
 
+/**
+ * 小程序版本模式（无需登录，公开）
+ * PROD 生产版本：维持完整点餐/商家后台功能
+ * REVIEW 审核版本：仅展示咖啡知识（列表+详情），隐藏点餐与商家后台，用于微信审核
+ * 取值来自 sys_config.app_mode，缺省为 PROD
+ */
+router.get(
+  '/app-config',
+  wrap(async (req, res) => {
+    const row = await one("SELECT config_value FROM sys_config WHERE config_key = 'app_mode'");
+    const mode = row ? String(row.config_value) : 'PROD';
+    return ok(res, { mode: mode === 'REVIEW' ? 'REVIEW' : 'PROD' });
+  })
+);
+
 function formatStore(s) {
   return {
     id: String(s.id),

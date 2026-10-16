@@ -1,5 +1,6 @@
 <template>
-  <view class="page">
+  <view class="root">
+  <view v-if="!isReview" class="page">
     <view class="hero">
       <image class="bg" :src="fixUrl(store.cover)" mode="aspectFill" />
       <ct-kitty class="hero-paw" mode="paw" :size="180" color="#ffffff" opacity="0.18" />
@@ -62,6 +63,32 @@
 
     <view class="entry" @click="goMerchant">店主入口（企业管理）</view>
   </view>
+
+  <!-- 审核版本：咖啡知识库（列表 + 搜索） -->
+  <view v-if="isReview" class="review-page">
+    <view class="review-header">
+      <text class="review-title">咖啡知识库</text>
+      <text class="review-sub">探索每一杯咖啡的产地、做法与风味</text>
+    </view>
+    <view class="search-bar">
+      <input class="search-input" type="text" v-model="keyword" placeholder="搜索咖啡名称 / 风味" placeholder-class="search-ph" />
+    </view>
+    <view class="coffee-list">
+      <view v-for="c in coffeeList" :key="c.id" class="coffee-card" @click="goCoffeeDetail(c.id)">
+        <image v-if="c.cover" class="coffee-cover" :src="c.cover" mode="aspectFill" />
+        <view v-else class="coffee-cover coffee-cover--ph"><text class="ph-emoji">☕</text></view>
+        <view class="coffee-info">
+          <text class="coffee-name">{{ c.name }}</text>
+          <text class="coffee-intro">{{ c.intro }}</text>
+          <view class="tags">
+            <text v-for="t in c.tags" :key="t" class="tag">{{ t }}</text>
+          </view>
+        </view>
+      </view>
+      <view v-if="coffeeList.length === 0" class="empty">未找到相关咖啡</view>
+    </view>
+  </view>
+  </view>
 </template>
 
 <script setup>
@@ -74,8 +101,22 @@ import { useUserStore } from '@/store/user';
 import { ensureLogin, DEFAULT_STORE_ID } from '@/utils/auth';
 import { goMerchantEntry } from '@/utils/merchant-auth';
 import CtKitty from '@/components/ct-kitty.vue';
+import { useAppStore } from '@/store/app';
+import coffees from '@/data/coffees.json';
 
 const userStore = useUserStore();
+const appStore = useAppStore();
+const isReview = computed(() => appStore.isReview);
+const keyword = ref('');
+const coffeeList = computed(() => {
+  const kw = keyword.value.trim().toLowerCase();
+  if (!kw) return coffees;
+  return coffees.filter((c) => `${c.name}${c.tags.join('')}${c.intro}`.toLowerCase().includes(kw));
+});
+function goCoffeeDetail(id) {
+  uni.navigateTo({ url: `/pages/review/detail?id=${id}` });
+}
+
 const store = ref({ businessHours: '', businessStatus: 0 });
 const recommends = ref([]);
 const banners = ref([]);
@@ -149,12 +190,18 @@ function goMerchant() {
 }
 
 onMounted(async () => {
+  // 审核版本：仅展示咖啡知识库，不加载门店/菜单/登录
+  if (isReview.value) return;
   await ensureLogin();
   await loadStore();
   await loadMenu();
   await loadBanners();
 });
 onPullDownRefresh(async () => {
+  if (isReview.value) {
+    uni.stopPullDownRefresh();
+    return;
+  }
   await loadStore();
   await loadMenu();
   uni.stopPullDownRefresh();
@@ -335,5 +382,109 @@ onPullDownRefresh(async () => {
   padding: 24rpx;
   color: $text-secondary;
   font-size: 26rpx;
+}
+.review-page {
+  padding: 32rpx 24rpx 60rpx;
+}
+.review-header {
+  margin-bottom: 24rpx;
+  .review-title {
+    display: block;
+    font-size: 40rpx;
+    font-weight: 800;
+    color: $coffee-brown;
+  }
+  .review-sub {
+    display: block;
+    margin-top: 8rpx;
+    font-size: 24rpx;
+    color: $text-secondary;
+  }
+}
+.search-bar {
+  margin-bottom: 24rpx;
+  .search-input {
+    width: 100%;
+    height: 76rpx;
+    padding: 0 28rpx;
+    background: #fff;
+    border-radius: 38rpx;
+    font-size: 28rpx;
+    box-sizing: border-box;
+    box-shadow: $shadow-card;
+  }
+  .search-ph {
+    color: #c9bcc4;
+  }
+}
+.coffee-list {
+  display: flex;
+  flex-direction: column;
+  gap: 24rpx;
+}
+.coffee-card {
+  display: flex;
+  background: #fff;
+  border-radius: $radius-card;
+  overflow: hidden;
+  box-shadow: $shadow-card;
+  padding: 20rpx;
+  gap: 20rpx;
+}
+.coffee-cover {
+  width: 160rpx;
+  height: 160rpx;
+  border-radius: 16rpx;
+  flex: none;
+  background: $cream-white;
+}
+.coffee-cover--ph {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #ffe3ef, #fff3d6);
+  .ph-emoji {
+    font-size: 72rpx;
+  }
+}
+.coffee-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  .coffee-name {
+    font-size: 30rpx;
+    font-weight: 700;
+    color: $text-primary;
+  }
+  .coffee-intro {
+    margin-top: 8rpx;
+    font-size: 24rpx;
+    line-height: 1.5;
+    color: $text-secondary;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 3;
+    overflow: hidden;
+  }
+  .tags {
+    margin-top: 12rpx;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12rpx;
+    .tag {
+      font-size: 20rpx;
+      color: $coffee-brown;
+      background: #fff0f6;
+      border-radius: 20rpx;
+      padding: 4rpx 14rpx;
+    }
+  }
+}
+.empty {
+  text-align: center;
+  color: $text-secondary;
+  font-size: 26rpx;
+  padding: 80rpx 0;
 }
 </style>

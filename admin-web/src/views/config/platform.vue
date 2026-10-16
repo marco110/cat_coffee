@@ -35,6 +35,13 @@
         <el-form-item label="顾客端公告">
           <el-input v-model="form.CUSTOMER_NOTICE" type="textarea" :rows="3" placeholder="展示在小程序首页" />
         </el-form-item>
+        <el-form-item label="小程序版本">
+          <el-radio-group v-model="form.APP_MODE">
+            <el-radio label="PROD">生产版本（完整点餐 / 商家后台）</el-radio>
+            <el-radio label="REVIEW">审核版本（仅咖啡知识库，用于微信审核）</el-radio>
+          </el-radio-group>
+          <span class="unit">审核版本下小程序只展示咖啡知识（列表 + 详情），隐藏点餐与商家后台</span>
+        </el-form-item>
         <el-form-item>
           <el-button type="primary" @click="save">保存配置</el-button>
           <el-button @click="load">重置</el-button>
@@ -68,6 +75,7 @@ const DEFAULTS = {
   CUSTOMER_CANCEL_MINUTES: 5,
   SERVICE_PHONE: '',
   CUSTOMER_NOTICE: '',
+  APP_MODE: 'PROD',
 };
 
 const form = reactive({ ...DEFAULTS });
