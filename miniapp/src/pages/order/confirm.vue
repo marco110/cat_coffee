@@ -72,6 +72,7 @@
       <view class="panel" @click.stop>
         <view class="p-head">选择优惠券</view>
         <scroll-view class="p-body" scroll-y>
+          <view class="p-list">
           <view
             v-for="c in coupons"
             :key="c.userCouponId"
@@ -86,10 +87,11 @@
             <view class="c-right">
               <text class="c-name">{{ c.name }}</text>
               <text class="c-expire">{{ dateText(c.expireAt) }} 前有效</text>
+              <text v-if="!c.usable" class="c-reason">{{ c.unusableReason }}</text>
             </view>
-            <text v-if="!c.usable" class="c-reason">{{ c.unusableReason }}</text>
           </view>
           <view class="coupon none" :class="{ on: !selectedUserCouponId }" @click="pickCoupon(null)">不使用优惠券</view>
+          </view>
         </scroll-view>
       </view>
     </view>
@@ -415,7 +417,10 @@ async function submit() {
 }
 .p-body {
   max-height: 56vh;
-  padding: 20rpx 28rpx 40rpx;
+  padding: 20rpx 0 40rpx;
+}
+.p-list {
+  padding: 0 28rpx;
 }
 .coupon {
   display: flex;
@@ -434,6 +439,12 @@ async function submit() {
   &.none {
     justify-content: center;
     color: $text-secondary;
+    background: #fff;
+    border: 2rpx solid $border-color;
+    max-width: 500rpx;
+    margin: 8rpx auto 0;
+    padding: 16rpx 0;
+    border-radius: 40rpx;
   }
 }
 .c-left {
@@ -454,6 +465,7 @@ async function submit() {
 }
 .c-right {
   flex: 1;
+  min-width: 0;
   margin-left: 24rpx;
   display: flex;
   flex-direction: column;
