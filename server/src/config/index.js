@@ -82,4 +82,14 @@ module.exports = {
     topic: process.env.PUSHPLUS_TOPIC || '',
     api: process.env.PUSHPLUS_API || 'https://www.pushplus.plus/send',
   },
+  // 每日 20:30 天气预警推送（和风天气 + PushPlus）
+  // 仅向「开启消息通知且配置了 PushPlus token」的店员推送当前生效预警
+  weather: {
+    enabled: process.env.WEATHER_ALERT_ENABLED !== 'false',
+    // 和风天气预警接口（五莲，固定坐标 35.75,119.20；Ultra 私有域名）
+    apiUrl:
+      process.env.QWEATHER_ALERT_URL ||'',
+    // 和风天气 API Key（请求头 X-QW-Api-Key）
+    apiKey: process.env.QWEATHER_API_KEY || '',
+  },
 };

@@ -3,6 +3,7 @@ const config = require('../config');
 const db = require('../db');
 const logger = require('../common/logger');
 const { dateSql, addDays, nowSql } = require('../utils/time');
+const { pushWeatherAlert } = require('../services/weatherAlert');
 
 /** 凌晨重置沽清标记 */
 async function resetSoldOut() {
@@ -57,9 +58,16 @@ async function dailyJob() {
 }
 
 if (config.cron) {
-  // 每天 00:00 执行
+  // 每天 00:00 执行（重置沽清 / 过期券 / 日统计）
   cron.schedule('0 0 * * *', dailyJob, { timezone: 'Asia/Shanghai' });
-  logger.info('[cron] 已注册每日任务（00:00）');
+  // 每半小时执行一次（当地天气预警推送）
+  cron.schedule('*/30 * * * *', pushWeatherAlert, { timezone: 'Asia/Shanghai' });
+  logger.info('[cron] 已注册每日任务（00:00 凌晨统计 / 每半小时天气预警）');
 }
 
-module.exports = { dailyJob };
+// 服务启动后立即拉取一次天气预警：不必等首个 cron 周期（最多 30 分钟）才推送
+if (config.weather && config.weather.enabled) {
+  pushWeatherAlert().catch((e) => logger.error('[weather] 启动拉取天气预警失败：', e.message));
+}
+
+module.exports = { dailyJob, pushWeatherAlert };
