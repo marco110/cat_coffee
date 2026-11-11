@@ -82,10 +82,13 @@ module.exports = {
     topic: process.env.PUSHPLUS_TOPIC || '',
     api: process.env.PUSHPLUS_API || 'https://www.pushplus.plus/send',
   },
-  // 每日 20:30 天气预警推送（和风天气 + PushPlus）
-  // 仅向「开启消息通知且配置了 PushPlus token」的店员推送当前生效预警
+  // 天气预警推送（和风天气 + PushPlus）：每半小时轮询，仅向「开启通知且配置了 token」的店员推送
+  // 默认仅 07:30 ~ 23:00（北京时间）拉取/推送，夜间 23:00 ~ 07:30 免打扰
   weather: {
     enabled: process.env.WEATHER_ALERT_ENABLED !== 'false',
+    // 允许拉取/推送的时段（北京时间 HH:mm，区间 [pushStart, pushEnd)）；区间外不发请求也不推送
+    pushStart: process.env.WEATHER_PUSH_START || '07:30',
+    pushEnd: process.env.WEATHER_PUSH_END || '23:30',
     // 和风天气预警接口（五莲，固定坐标 35.75,119.20；Ultra 私有域名）
     apiUrl:
       process.env.QWEATHER_ALERT_URL ||'',

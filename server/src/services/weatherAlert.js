@@ -5,6 +5,32 @@ const { pushplus, escapeHtml } = require('./push');
 
 const TIMEOUT_MS = 10000;
 
+/** 把 "HH:mm" 解析成当天分钟数，非法返回 null */
+function parseHm(s) {
+  const m = /^(\d{1,2}):(\d{2})$/.exec(String(s || '').trim());
+  if (!m) return null;
+  const h = Number(m[1]);
+  const min = Number(m[2]);
+  return h >= 0 && h <= 23 && min >= 0 && min <= 59 ? h * 60 + min : null;
+}
+
+/**
+ * 当前北京时间是否处于允许拉取/推送的时段 [pushStart, pushEnd)
+ * 固定按 UTC+8 计算，不依赖服务器系统时区；支持跨午夜配置
+ * @param {number} now 毫秒时间戳（便于测试传入）
+ */
+function isWithinPushHours(now = Date.now()) {
+  const { pushStart, pushEnd } = config.weather;
+  const start = parseHm(pushStart);
+  const end = parseHm(pushEnd);
+  // 配置异常时不拦截，避免天气预警功能被静默禁用
+  if (start === null || end === null || start === end) return true;
+  const d = new Date(now + 8 * 60 * 60 * 1000);
+  const cur = d.getUTCHours() * 60 + d.getUTCMinutes();
+  // start < end：普通区间；start > end：跨午夜区间
+  return start < end ? cur >= start && cur < end : cur >= start || cur < end;
+}
+
 /**
  * 拉取和风天气预警（青岛，固定坐标）
  * 接口返回参考 https://dev.qweather.com/docs/api/warning/weather-alert/
@@ -108,15 +134,29 @@ function renderAlert(w) {
 
 /**
  * 定时任务：拉取天气预警，推送给开启通知的店员
+ * 仅在允许时段（默认 07:30~23:00 北京时间）内拉取与推送，夜间免打扰；
  * 仅在有生效预警时才推送（无预警不骚扰）；每半小时轮询一次，
  * 但只有「生效预警集合」发生变化（新增/解除/内容变更）时才真正推送，避免重复刷屏。
  */
 let lastAlertSig = '';
+let inQuietHours = false; // 仅状态变化时打一条日志，避免免打扰时段每半小时刷屏
 async function pushWeatherAlert() {
   try {
     if (!config.weather.enabled) {
       logger.info('[weather] 天气预警推送未开启，跳过');
       return;
+    }
+    // 免打扰时段：在发 HTTP 请求之前拦截，既不拉取也不推送（启动拉取与定时轮询统一受控）
+    if (!isWithinPushHours()) {
+      if (!inQuietHours) {
+        logger.info(`[weather] 免打扰时段（${config.weather.pushEnd} ~ ${config.weather.pushStart}），暂停拉取与推送`);
+        inQuietHours = true;
+      }
+      return;
+    }
+    if (inQuietHours) {
+      logger.info('[weather] 免打扰时段结束，恢复天气预警拉取与推送');
+      inQuietHours = false;
     }
     const alerts = await fetchAlerts();
     // 仅在「生效预警集合」发生变化时才推送，避免每半小时重复刷屏
@@ -156,4 +196,4 @@ function buildContent(alerts) {
   return { title, content: head + body };
 }
 
-module.exports = { pushWeatherAlert, fetchAlerts, getNotifyTokens, renderAlert, buildContent };
+module.exports = { pushWeatherAlert, fetchAlerts, getNotifyTokens, renderAlert, buildContent, isWithinPushHours };

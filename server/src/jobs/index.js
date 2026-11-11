@@ -60,12 +60,12 @@ async function dailyJob() {
 if (config.cron) {
   // 每天 00:00 执行（重置沽清 / 过期券 / 日统计）
   cron.schedule('0 0 * * *', dailyJob, { timezone: 'Asia/Shanghai' });
-  // 每半小时执行一次（当地天气预警推送）
+  // 每半小时触发一次；是否真正拉取/推送由 pushWeatherAlert 按允许时段判断（夜间免打扰）
   cron.schedule('*/30 * * * *', pushWeatherAlert, { timezone: 'Asia/Shanghai' });
-  logger.info('[cron] 已注册每日任务（00:00 凌晨统计 / 每半小时天气预警）');
+  logger.info('[cron] 已注册每日任务（00:00 凌晨统计 / 每半小时天气预警，仅 07:30~23:00 生效）');
 }
 
-// 服务启动后立即拉取一次天气预警：不必等首个 cron 周期（最多 30 分钟）才推送
+// 服务启动后立即拉取一次天气预警：不必等首个 cron 周期；夜间启动同样受免打扰时段限制
 if (config.weather && config.weather.enabled) {
   pushWeatherAlert().catch((e) => logger.error('[weather] 启动拉取天气预警失败：', e.message));
 }
