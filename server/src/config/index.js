@@ -89,6 +89,8 @@ module.exports = {
     // 允许拉取/推送的时段（北京时间 HH:mm，区间 [pushStart, pushEnd)）；区间外不发请求也不推送
     pushStart: process.env.WEATHER_PUSH_START || '07:30',
     pushEnd: process.env.WEATHER_PUSH_END || '23:30',
+    // 单次接口请求超时（毫秒），服务器到和风接口网络较慢时可调大
+    timeoutMs: Number(process.env.QWEATHER_TIMEOUT_MS || 20000),
     // 和风天气预警接口（五莲，固定坐标 35.75,119.20；Ultra 私有域名）
     apiUrl:
       process.env.QWEATHER_ALERT_URL ||'',

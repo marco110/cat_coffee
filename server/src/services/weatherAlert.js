@@ -3,8 +3,6 @@ const db = require('../db');
 const logger = require('../common/logger');
 const { pushplus, escapeHtml } = require('./push');
 
-const TIMEOUT_MS = 10000;
-
 /** 把 "HH:mm" 解析成当天分钟数，非法返回 null */
 function parseHm(s) {
   const m = /^(\d{1,2}):(\d{2})$/.exec(String(s || '').trim());
@@ -32,12 +30,13 @@ function isWithinPushHours(now = Date.now()) {
 }
 
 /**
- * 拉取和风天气预警（青岛，固定坐标）
+ * 拉取和风天气预警（固定坐标）
  * 接口返回参考 https://dev.qweather.com/docs/api/warning/weather-alert/
- * 成功返回预警数组（已规整），无预警或异常时返回 []
+ * 成功返回预警数组（空数组 = 确实无预警）；失败/超时返回 null，与「无预警」严格区分
  */
 async function fetchAlerts() {
   const { apiUrl, apiKey } = config.weather;
+  const TIMEOUT_MS = Number(config.weather.timeoutMs) > 0 ? Number(config.weather.timeoutMs) : 20000;
   const ctrl = new AbortController();
   const timer = setTimeout(() => ctrl.abort(), TIMEOUT_MS);
   try {
@@ -52,7 +51,7 @@ async function fetchAlerts() {
       data = JSON.parse(text);
     } catch (e) {
       logger.warn('[weather] 和风天气预警接口返回非 JSON（可能鉴权/网关错误）：', text.slice(0, 300));
-      return [];
+      return null;
     }
     // 兼容多种返回形态：
     //   1) { code:'200', warning:[...] }        标准封装
@@ -68,13 +67,18 @@ async function fetchAlerts() {
     // 仅当既不是预警数组、又无预警字段、且 code 非 200 时才判为异常
     if (arr === undefined && String(data.code) !== '200') {
       logger.warn('[weather] 和风天气预警接口返回异常：', text.slice(0, 500));
-      return [];
+      return null;
     }
     if (arr && !Array.isArray(arr)) arr = [arr];
     return arr || [];
   } catch (e) {
-    logger.warn('[weather] 拉取天气预警失败:', e.message);
-    return [];
+    const aborted = e && (e.name === 'AbortError' || /aborted/i.test(e.message || ''));
+    if (aborted) {
+      logger.warn(`[weather] 拉取天气预警超时（超过 ${TIMEOUT_MS}ms），本次跳过`);
+    } else {
+      logger.warn('[weather] 拉取天气预警失败:', e.message);
+    }
+    return null;
   } finally {
     clearTimeout(timer);
   }
@@ -159,6 +163,8 @@ async function pushWeatherAlert() {
       inQuietHours = false;
     }
     const alerts = await fetchAlerts();
+    // 拉取失败/超时：直接跳过且不动 lastAlertSig，避免下次成功时重复推送同一批预警
+    if (alerts === null) return;
     // 仅在「生效预警集合」发生变化时才推送，避免每半小时重复刷屏
     const sig = alerts.map((a) => a.id || a.title).sort().join('|');
     if (alerts.length && sig === lastAlertSig) {
